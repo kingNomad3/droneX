@@ -1,5 +1,13 @@
--- add foreign keys 
--- add state constraint 
+
+-- add state constraint --------------------------
+-- next_accepted_state CHAR(1) [null, note: 'both next_accepted_state and next_rejected_state must either be null "terminal", or neither "non-terminal"']
+-- next_rejected_state CHAR(1) [null, note: 'both next_accepted_state and next_rejected_state must either be null "terminal", or neither "non-terminal"']
+
+ALTER TABLE state DROP CONSTRAINT IF EXISTS fk_state_symbol;
+ALTER TABLE technical_specification DROP CONSTRAINT IF EXISTS fk_ts_unit;
+ALTER TABLE drone_specification DROP CONSTRAINT IF EXISTS fk_ds_specification;
+ALTER TABLE drone_specification DROP CONSTRAINT IF EXISTS fk_ds_drone_model;
+DROP TABLE IF EXISTS state ;
 DROP TABLE IF EXISTS unit ;
 DROP TABLE IF EXISTS technical_specification;
 DROP TABLE IF EXISTS drone_specification;
@@ -56,6 +64,23 @@ CREATE TABLE state(
 	CONSTRAINT uc_state_description UNIQUE (description),
 	
 );
+
+
+ALTER TABLE drone_specification
+	ADD CONSTRAINT fk_ds_drone_model
+		FOREIGN KEY (drone_model) REFERENCES drone_model(id);
+
+ALTER TABLE drone_specification
+	ADD CONSTRAINT fk_ds_specification
+		FOREIGN KEY (specification) REFERENCES technical_specification(id);
+
+ALTER TABLE technical_specification
+	ADD CONSTRAINT fk_ts_unit
+		FOREIGN KEY (unit) REFERENCES unit(id);
+
+ALTER TABLE state 
+	ADD CONSTRAINT fk_state_symbol
+		FOREIGN KEY (symbol) REFERENCES drone(state);
 
 
 
