@@ -1,5 +1,5 @@
-ALTER TABLE DROP CONSTRAINT IF EXISTS fk_not_emp;
-ALTER TABLE DROP CONSTRAINT IF EXISTS fk_not_dro;
+ALTER TABLE state_note DROP CONSTRAINT IF EXISTS fk_not_emp;
+ALTER TABLE state_note DROP CONSTRAINT IF EXISTS fk_not_dro;
 
 DROP TABLE IF EXISTS state_note;
 DROP TABLE IF EXISTS employee;
@@ -30,7 +30,6 @@ CREATE TABLE state_note (
 	
 	CONSTRAINT pk_not	  PRIMARY KEY (id),
 	CONSTRAINT cc_not_det CHECK (LENGTH(details)>=15)
-	-- commentaire : double checker le diagramme
 );
 
 ALTER TABLE ADD CONSTRAINT fk_not_emp FOREIGN KEY (employee) REFERENCES employee(id);
