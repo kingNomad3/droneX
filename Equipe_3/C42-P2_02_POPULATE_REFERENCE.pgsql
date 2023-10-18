@@ -5,7 +5,7 @@ EXECUTE ins_unit('M', 'metres', 'Unite de base de longeur');
 DEALLOCATE ins_unit;
 
 PREPARE ins_technical_specification(VARCHAR(64),VARCHAR(512),INTEGER) AS 
-INSERT INTO technical_specification VALUES ($1,$2,(SELECT id FROM unit WHERE unit = $3));
+INSERT INTO technical_specification VALUES ($1,$2,(SELECT id FROM unit WHERE symbol = $3));
 EXECUTE ins_technical_specification('Poids','Masse du produit','kg');
 
 DEALLOCATE ins_technical_specification;
