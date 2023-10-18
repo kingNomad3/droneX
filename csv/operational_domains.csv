@@ -1,0 +1,17 @@
+name, description, depend
+Domaine opérationnel, "Environnement spécifique où un système ou appareil est déployé et fonctionne, définissant ses contraintes, capacités et applications adaptées.", NULL
+Aérien, "Machines volantes, utilisent ailes ou hélices, naviguent dans l'atmosphère, dépendent de la portance.", Domaine opérationnel 
+Terrestre, "Véhicules roulants ou rampants, opèrent sur terrains variés, mécanismes de traction.", Domaine opérationnel
+Aquatique, "Engins flottants ou submersibles, naviguent dans l'eau, propulsion adaptée à la résistance hydrodynamique.", Domaine opérationnel
+Vol à vue, élévation <= 500 m, Aérien
+Troposphérique, élévation <= 8 km, Aérien
+Stratosphérique, 8 km < élévation <= 50 km, Aérien
+Mésosphérique, 50 km < élévation <= 85 km, Aérien
+Roulant, "avec roues, terrains relativement plats, haute vitesse", Terrestre
+Chenillé, "avec chenilles, terrains relativement accidentés, moyenne vitesse", Terrestre
+Appendiculaire, "avec pattes, terrains accidentés, faible vitesse", Terrestre
+De surface, "ne peut être immergé, reste en surface", Aquatique
+Pélagique, profondeur <= 200 m', Aquatique
+Mésopélagique, "200 m < profondeur <= 1 km', Aquatique
+Bathypélagique, "1 km < profondeur <= 4 km', Aquatique
+Abyssopélagique, "profondeur > 4 km', Aquatique
