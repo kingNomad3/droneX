@@ -19,10 +19,37 @@
 
 -- Fonction d'insertion:
 
+CREATE OR REPLACE PROCEDURE inserer_data_operational_domain(
+	insert_name VARCHAR(32),
+	insert_description VARCHAR(256),
+	insert_depend VARCHAR(32)
+)
+LANGUAGE SQL
+AS $$
+	INSERT INTO operational_domain(name, description, depend)
+		VALUES (insert_name, insert_description, (SELECT id FROM operational_domain WHERE name = insert_depend OR insert_depend = NULL));
+$$;
 
 
-BEGIN
-	fonction_input_operationaltable()
+BEGIN;
+
+	CALL inserer_data_operational_domain('Domaine opérationnel', 'Environnement spécifique où un système ou appareil est déployé et fonctionne, définissant ses contraintes, capacités et applications adaptées.', NULL);
+	CALL inserer_data_operational_domain('Aérien', 'Machines volantes, utilisent ailes ou hélices, naviguent dans l''atmosphère, dépendent de la portance.', 'Domaine opérationnel');
+	CALL inserer_data_operational_domain('Terrestre', 'Véhicules roulants ou rampants, opèrent sur terrains variés, mécanismes de traction.', 'Domaine opérationnel');
+	CALL inserer_data_operational_domain('Aquatique', 'Engins flottants ou submersibles, naviguent dans l''eau, propulsion adaptée à la résistance hydrodynamique.', 'Domaine opérationnel');
+	CALL inserer_data_operational_domain('Vol à vue', 'élévation <= 500 m', 'Aérien');
+	CALL inserer_data_operational_domain('Troposphérique', 'élévation <= 8 km', 'Aérien');
+	CALL inserer_data_operational_domain('Stratosphérique', '8 km < élévation <= 50 km', 'Aérien');
+	CALL inserer_data_operational_domain('Mésosphérique', '50 km < élévation <= 85 km', 'Aérien');
+	CALL inserer_data_operational_domain('Roulant', 'avec roues, terrains relativement plats, haute vitesse', 'Terrestre');
+	CALL inserer_data_operational_domain('Chenillé', 'avec chenilles, terrains relativement accidentés, moyenne vitesse', 'Terrestre');
+	CALL inserer_data_operational_domain('Appendiculaire', 'avec pattes, terrains accidentés, faible vitesse', 'Terrestre');
+	CALL inserer_data_operational_domain('De surface', 'ne peut être immergé, reste en surface', 'Aquatique');
+	CALL inserer_data_operational_domain('Pélagique', 'profondeur <= 200 m', 'Aquatique');
+	CALL inserer_data_operational_domain('Mésopélagique', '200 m < profondeur <= 1 km', 'Aquatique');
+	CALL inserer_data_operational_domain('Bathypélagique', '1 km < profondeur <= 4 km', 'Aquatique');
+	CALL inserer_data_operational_domain('Abyssopélagique', 'profondeur > 4 km', 'Aquatique');
+
 COMMIT;
 
 -- Transaction pour l'insertion dans la table state:
