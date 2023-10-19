@@ -19,6 +19,7 @@
 
 -- Fonction d'insertion:
 
+
 CREATE OR REPLACE PROCEDURE inserer_data_operational_domain(
 	insert_name VARCHAR(32),
 	insert_description VARCHAR(256),
@@ -54,7 +55,8 @@ COMMIT;
 
 -- Transaction pour l'insertion dans la table state:
 
-BEGIN;	
+BEGIN;
+
 	INSERT INTO state (symbol, name, description, next_accepted_state, next_rejected_state)
 		VALUES
 			('I', 'Inspection', 'Évaluation visuelle ou technique d''un drone pour vérifier son état et sa conformité aux normes.', 'T', 'R'),
@@ -67,3 +69,17 @@ BEGIN;
 			('H', 'Hors-service', 'État d''un drone qui n''est plus en condition de fonctionnement ou qui a été mis hors service pour diverses raisons. Le drone peut tout de même ètre utilisé pour ses pièces.', NULL, NULL);
 			
 COMMIT;
+
+DROP PROCEDURE inserer_data_operational_domain(insert_name VARCHAR(32), insert_description VARCHAR(256), insert_depend VARCHAR(32));
+
+CREATE TRIGGER forbid_dml_operations_trig_state
+	BEFORE INSERT OR UPDATE OR DELETE ON state
+	FOR EACH ROW
+	EXECUTE PROCEDURE forbid_dml_operations();
+
+CREATE TRIGGER forbid_dml_operations_trig_od
+	BEFORE INSERT OR UPDATE OR DELETE ON operational_domain
+	FOR EACH ROW
+	EXECUTE PROCEDURE forbid_dml_operations();
+
+
