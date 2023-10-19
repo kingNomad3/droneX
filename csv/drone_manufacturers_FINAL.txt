@@ -1,0 +1,12 @@
+EXECUTE drone_manufacturers('DJI Enterprise','https://enterprise.dji.com/');
+EXECUTE drone_manufacturers('Parrot','https://www.parrot.com/us');
+EXECUTE drone_manufacturers('AgEagle','https://ageagle.com/');
+EXECUTE drone_manufacturers('Quantum Systems','https://quantum-systems.com/');
+EXECUTE drone_manufacturers('Lilium','https://lilium.com/');
+EXECUTE drone_manufacturers('Bell','https://www.bellflight.com/');
+EXECUTE drone_manufacturers('Clear Path Robotics','https://clearpathrobotics.com/');
+EXECUTE drone_manufacturers('Teledyne Flir','https://www.flir.ca/');
+EXECUTE drone_manufacturers('Boston Dynamics','https://bostondynamics.com/');
+EXECUTE drone_manufacturers('Oceanα','https://www.oceanalpha.com/');
+EXECUTE drone_manufacturers('Blueye','https://www.blueyerobotics.com/');
+EXECUTE drone_manufacturers('Deep Trekker','https://www.deeptrekker.com/');
