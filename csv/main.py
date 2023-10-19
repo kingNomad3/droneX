@@ -2,16 +2,9 @@ import csv
 import sys
 
 def parse_csv_to_execute(fname:str, execute_name:str, replace_null: bool = False) -> None:
-    """ DOC STRING
-    - Prends un nom de fichier (pas absolu) et écrit un execute statement
-    en plgsql pour produire une requête avec le format csv donné. 'Escape' 
-    le header du fichier CSV.
-    
-    - Note : Il est possible de remplacer les '-' par NULL avec le troisième 
-    paramètre (False par défaut).
-    
-    - Exemple: execute_name est le nom de la requête à retourner: EXECUTE ins_table (); ...
-    
+    """ Script semi-fonctionnel : comme les données ne sont pas 100% parfaites 
+    (guillemets, virgules et apostrophes seules), il est potentiellement important de 
+    passer au travers à la main pour les problèmes possibles
     """
 
 
@@ -20,7 +13,7 @@ def parse_csv_to_execute(fname:str, execute_name:str, replace_null: bool = False
     next(csv_file)
 
     result = ""
-    for row in csv_file:
+    for row in csv_file:          
         ligne_courante = ""
         for value in row:
             value = value.strip()    
@@ -50,8 +43,5 @@ def write_to_file(content:str, fname:str):
 
 
 if __name__ == "__main__":
-    args = sys.argv
-    
-    output = parse_csv_to_execute("states.csv", "ins_states", replace_null=True)
-    
-    write_to_file(output, "result.txt")
+    output = parse_csv_to_execute("technical_specifications.csv", "ins_technical_spec", replace_null=True)
+    write_to_file(output, "technical_specification_FINAL.txt")
