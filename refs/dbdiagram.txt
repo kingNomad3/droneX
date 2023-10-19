@@ -1,0 +1,211 @@
+// Use DBML to define your database structure
+// Home: https://dbdiagram.io/d
+// Docs: https://dbml.dbdiagram.io/docs
+
+// -------------------------------------------------------------------------------
+// 420-C42
+// Projet 2
+// DroneX
+// -------------------------------------------------------------------------------
+
+
+// Attention, les clés étrangères ne sont pas à la fin de ce script. 
+// Elles doivent l'être dans le code SQL.
+
+
+// -------------------------------------------------------------------------------
+// Tables de référence
+// -------------------------------------------------------------------------------
+// Table représentant les états
+// Voir les détails à même l'énoncé dans la section : États -> Présentation générale
+Table state {
+  symbol CHAR(1) [primary key]
+  name varchar(32) [not null, unique]
+  description VARCHAR(2048) [not null, unique]
+  next_accepted_state CHAR(1) [null, note: 'both next_accepted_state and next_rejected_state must either be null "terminal", or neither "non-terminal"']
+  next_rejected_state CHAR(1) [null, note: 'both next_accepted_state and next_rejected_state must either be null "terminal", or neither "non-terminal"']
+}
+//
+Ref: state.next_accepted_state > state.symbol
+Ref: state.next_rejected_state > state.symbol
+//
+// Table représentant les domaines opérationnels
+// Voir les détails à même l'énoncé dans la section Domaines opérationnels
+Table operational_domain {
+  id serial [primary key]
+  name varchar(32) [not null, unique, note: 'length > 3']
+  description varchar(256)
+  depend integer
+}
+//
+Ref: operational_domain.depend > operational_domain.id
+//
+// Notes sur les tables state et operational_domain
+// - le contenu de ces tables est entièrement défini manuellement selon les pratiques de l'entreprise
+// - elles sont non modifiables par la suite *** 
+// - vous devez réaliser un trigger pour rendre effective cette contrainte
+// -------------------------------------------------------------------------------
+
+
+
+// -------------------------------------------------------------------------------
+// Tables incomplètes nécessaires uniquement pour alimenter la preuve de concept
+// -------------------------------------------------------------------------------
+// Table représentant les entreprises fabriquant les drones
+Table manufacturing_company {
+  id serial [primary key]
+  name VARCHAR(64) [not null, unique]
+  web_site varchar(256) [not null, unique]
+}
+//
+//
+// L'énumération représentant le statut d'un employé
+Enum employee_status {
+  probation [note: 'employé en fonction mais en période d essai temporaire, lors de son embauche']
+  regular [note: 'employé en fonction, considéré permanent après la période d essai']
+  retired [note: 'a pris sa retraite']
+  deceased [note: 'décédé']
+  resigned [note: 'démissioné']
+  on_leave [note: 'en congé'] // en congé (cela pourrait être un congé maladie, un congé parental, un congé sabbatique, etc.)
+  fired [note: 'renvoyé, licencié : raisons liées à l employé']
+  laid_off [note: 'renvoyé, licencié : raisons non-liées à l employé'] // circonstances économiques ou organisationnelles
+  suspended [note: 'temporairement suspendu'] // raisons syndicales, enquête en cours, politique d'entreprise, ...
+}
+//
+// Table représentant les employés de l'entreprise
+Table employee {
+  id serial [primary key]
+  ssn varchar(32) [not null, unique, note: 'length >= 6, for international considerations, the format is unspecified']
+  first_name VARCHAR(64) [not null]
+  last_name VARCHAR(64) [not null]
+  status employee_status [not null, default: 'probation']
+  office_room CHAR(18) [not null, default: 'GZ 000.WHI-100.A10', note: 'must respect the given location pattern']
+}
+// -------------------------------------------------------------------------------
+ 
+
+
+// -------------------------------------------------------------------------------
+// Tables importantes et nécessaires à la preuve de concept
+// -------------------------------------------------------------------------------
+//
+//
+// Section drone -----------------------------------------------------------------
+//
+//
+// Table représentant les modèles de drones
+// À titre d'exemple, vous pouvez vous référez à l'énoncé dans la section :
+//    Immersion et familiarisation du domaine	-> Exemples de drone
+Table drone_model {
+  id serial [primary key]
+  manufacturer integer [not null]
+  name varchar(64) [not null, unique, note: 'length > 0']
+  description varchar(2048) [not null, note: 'length >= 12'] 
+  web_site varchar(256) [unique]
+}
+//
+Ref: drone_model.manufacturer > manufacturing_company.id
+//
+// Table d'association permettant de définir les domaines pour chaque modèle de drone.
+Table drone_domain {
+  model integer [primary key]
+  domain integer [primary key]
+}
+//
+Ref: drone_domain.model > drone_model.id
+Ref: drone_domain.domain > operational_domain.id
+//
+//
+// Table représentant les unités de mesure utilisés
+Table unit {
+  id serial
+  symbol varchar(16) [not null, unique, note: 'length > 0']
+  name varchar(64) [not null, unique, note: 'length > 0']
+  description varchar(1024) [note: 'null or length >= 10']
+}
+//
+// Table représentant des spécifications techniques possibles.
+Table technical_specification {
+  id serial
+  name varchar(64) [not null, unique, note: 'length >= 2']
+  description varchar(512) [not null, note: 'length >= 10']
+  unit integer
+}
+//
+Ref: technical_specification.unit > unit.id
+//
+// Table de des spécifications pour chacun des drones
+Table drone_specification {
+  id serial [primary key]
+  drone_model integer [not null]
+  specification integer [not null]
+  value varchar(256) [not null, note: 'length > 0']
+  comments varchar(1024)
+}
+//
+Ref: drone_specification.drone_model > drone_model.id
+Ref: drone_specification.specification > technical_specification.id
+//
+//
+//
+// Table des drones que possède l'entreprise.
+Table drone {
+  model integer [not null]
+  id serial [primary key]
+  serial_number varchar(64) [not null, unique, note: 'length >= 1']
+  drone_tag char(20) [not null, unique, note: 'must repect the given drone id pattern']   
+  acquisition_date date [not null, default: 'now']
+}
+//
+Ref: drone.model > drone_model.id
+//
+//
+//
+// Section états des drones ------------------------------------------------------
+//
+//
+// Table représentant l'état d'un drone à un certain moment
+// L'une des deux tables transactionnelles
+Table drone_state {
+  id serial [primary key]
+  drone integer [not null, note: 'unique on both : drone & start_date_time']
+  state CHAR(1) [not null]
+  employee integer [not null] // représente l'employé qui a validé le changement d'état pour arriver à cet état
+  start_date_time timestamp [not null, note: 'unique on both : drone & start_date_time']
+  location char(19) [default: 'GZ 01', default: 'XB 000.MAG-600.AZ00', note: 'must respect the given location pattern, only null when rented or lost']
+}
+//
+Ref: drone_state.drone > drone.id
+Ref: drone_state.state > state.symbol
+Ref: drone_state.employee > employee.id
+//
+//
+//
+// Section notes sur l'état des drones -------------------------------------------
+//
+//
+// L'énumération nécessaire aux types de note
+Enum note_type {
+  general_observation
+  problematic_observation
+  maintenance_performed
+  repair_completed
+  equipment_replaced
+}
+//
+// Table représentant chaque note pour les états des drones 
+table state_note {
+  id serial [primary key]
+  drone_state integer [not null]
+  note note_type [not null]
+  date_time timestamp [not null]
+  employee integer [not null]
+  details varchar(2048) [not null, note: 'length >= 15']
+}
+//
+Ref: state_note.drone_state > drone_state.id
+Ref: state_note.employee > employee.id
+// -------------------------------------------------------------------------------
+//
+//
+//
