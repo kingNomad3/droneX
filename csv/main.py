@@ -1,44 +1,47 @@
 import csv
+import sys
 
-# nom du statement execute
-nom_statement = "ins_technical_specifications"
-result = ""
-replace_null = False
-# Faire attention, le résultat n'est pas assuré
+def parse_csv_to_execute(fname:str, execute_name:str, replace_null: bool = False) -> None:
+    """ Script semi-fonctionnel : comme les données ne sont pas 100% parfaites 
+    (guillemets, virgules et apostrophes seules), il est potentiellement important de 
+    passer au travers à la main pour les problèmes possibles
+    """
 
 
-# nom du fichier!
-open_file = open('technical_specifications.csv', 'r')
-csv_file = csv.reader(open_file, delimiter=',')
+    open_file = open(fname, 'r')
+    csv_file = csv.reader(open_file, delimiter=',')
+    next(csv_file)
 
-# skip le header
-next(csv_file)
+    result = ""
+    for row in csv_file:          
+        ligne_courante = ""
+        for value in row:
+            value = value.strip()    
+            value = "'" + value + "'," 
+            ligne_courante += value
+        
+        ligne_courante = ligne_courante.rstrip(',')
+        ligne_courante = ligne_courante.replace('"', '')
+        
+        # à discuter avec JC
+        if (replace_null):
+            ligne_courante = ligne_courante.replace("'-'", "NULL")
+        
+        result += f"EXECUTE {execute_name}({ligne_courante});\n"
+        
+    open_file.close()
 
-# traverse les inserts
-for row in csv_file:
+    return result
+
+def write_to_file(content:str, fname:str):
+    f = open(fname, "w")
+    f.write(content)
+    f.close()
     
-    buffer = ""
-    
-    for value in row:
-        value = value.strip()    
-        value = "'" + value + "'," 
-        buffer += value
-    
-    buffer = buffer.rstrip(',')
-    buffer = buffer.replace('"', '')
-    
-    # à discuter avec JC
-    if (replace_null):
-        buffer = buffer.replace("'-'", "NULL")
-    
-    result += f"EXECUTE {nom_statement}({buffer});\n"
-    
-    
-open_file.close()
-
-f = open("test.txt", "w")
-f.write(result)
-f.close()
 
 
 
+
+if __name__ == "__main__":
+    output = parse_csv_to_execute("technical_specifications.csv", "ins_technical_spec", replace_null=True)
+    write_to_file(output, "technical_specification_FINAL.txt")

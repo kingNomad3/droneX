@@ -1,25 +1,56 @@
-PREPARE ins_unit(VARCHAR(16),VARCHAR(64), VARCHAR(1024)) AS 
-INSERT INTO unit VALUES ($1,$2,$3); 
-EXECUTE ins_unit('M', 'metres', 'Unite de base de longeur');
-
 DEALLOCATE ins_unit;
 
-PREPARE ins_technical_specification(VARCHAR(64),VARCHAR(512),INTEGER) AS 
-INSERT INTO technical_specification VALUES ($1,$2,(SELECT id FROM unit WHERE symbol = $3));
-EXECUTE ins_technical_specification('Poids','Masse du produit','kg');
+PREPARE ins_unit(VARCHAR(16),VARCHAR(64), VARCHAR(1024)) AS 
+INSERT INTO unit(symbol, name , description)VALUES ($1,$2,$3);
+
+BEGIN;
+	EXECUTE ins_unit('M', 'metres', 'Unite de base de longeur');
+COMMIT;
+
+-- SELECT * FROM unit
 
 DEALLOCATE ins_technical_specification;
 
+PREPARE ins_technical_specification(VARCHAR(64),VARCHAR(512),VARCHAR(16)) AS 
+INSERT INTO technical_specification(name, description, unit) VALUES ($1,$2,(SELECT id FROM unit WHERE symbol = $3));
 
--- PREPARE ins_drone_specification(INTEGER,INTEGER,VARCHAR(256),VARCHAR(1024)) AS
--- INSERT INTO ins_drone_specification VALUES((SELECT id FROM drone_model WHERE name = $1),(SELECT id FROM drone_model WHERE name = $2),$3,$4);
--- EXECUTE ins_drone_specification('Matrice 350 RTK','Autonomie dopÃ©ration','55','La durÃ©e peut varier en fonction des conditions de vol');
+BEGIN;
+	EXECUTE ins_technical_specification('Poids','Masse du produit','M');
+COMMIT;
 
--- DEALLOCATE ins_drone_specification
+-- SELECT * FROM technical_specification
 
 
-PREPARE ins_operational_domain(VARCHAR(32),VARCHAR(256),INTEGER) AS
-INSERT INTO ins_operational_domain VALUES($1,$2,$3);
-EXECUTE ins_operational_domain('Domaine operationel','Envit');
 
-DEALLOCATE ins_drone_specification
+CREATE OR REPLACE FUNCTION forbid_dml_operations() RETURNS TRIGGER
+LANGUAGE PLPGSQL AS $$
+BEGIN
+RAISE EXCEPTION 'Vous ne possedez pas les permissions pour modifier cette table';
+END$$;
+
+CREATE TRIGGER forbid_dml_operations_trig_unit
+	BEFORE INSERT OR UPDATE OR DELETE ON unit
+	FOR EACH ROW
+	EXECUTE PROCEDURE forbid_dml_operations();
+
+CREATE TRIGGER forbid_dml_operations_trig_ts
+	BEFORE INSERT OR UPDATE OR DELETE ON technical_specification;
+	FOR EACH ROW
+	EXECUTE PROCEDURE forbid_dml_operations();
+	
+	
+CREATE OR REPLACE PROCEDURE insertAAA(insert_1 VARCHAR(14), insert_2 VARCHAR(64), insert_3 VARCHAR(1024))
+LANGUAGE SQL
+AS $$
+	INSERT INTO unit(symbol, name , description)VALUES (insert_1, insert_2, insert_3);
+$$;
+
+
+CALL insertAAA('M', 'metres', 'Unite de base de longeur');
+
+
+
+
+
+
+	
