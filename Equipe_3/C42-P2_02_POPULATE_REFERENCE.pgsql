@@ -1,3 +1,4 @@
+--partie deux terminer
 DEALLOCATE ins_unit;
 
 PREPARE ins_unit(VARCHAR(16),VARCHAR(64), VARCHAR(1024)) AS 
@@ -25,7 +26,7 @@ COMMIT;
 CREATE OR REPLACE FUNCTION forbid_dml_operations() RETURNS TRIGGER
 LANGUAGE PLPGSQL AS $$
 BEGIN
-RAISE EXCEPTION 'Vous ne possedez pas les permissions pour modifier cette table';
+RAISE EXCEPTION 'Opération % interdite dans table %', TG_OP, TG_TABLE_NAME;
 END$$;
 
 CREATE TRIGGER forbid_dml_operations_trig_unit
@@ -34,10 +35,10 @@ CREATE TRIGGER forbid_dml_operations_trig_unit
 	EXECUTE PROCEDURE forbid_dml_operations();
 
 CREATE TRIGGER forbid_dml_operations_trig_ts
-	BEFORE INSERT OR UPDATE OR DELETE ON technical_specification;
+	BEFORE INSERT OR UPDATE OR DELETE ON technical_specification
 	FOR EACH ROW
 	EXECUTE PROCEDURE forbid_dml_operations();
-	
+
 	
 CREATE OR REPLACE PROCEDURE insertAAA(insert_1 VARCHAR(14), insert_2 VARCHAR(64), insert_3 VARCHAR(1024))
 LANGUAGE SQL
@@ -50,6 +51,10 @@ CALL insertAAA('M', 'metres', 'Unite de base de longeur');
 
 
 
+
+
+
+	
 
 
 
