@@ -1,9 +1,9 @@
-1. Rédaction du script de création des objets fondamentaux p.27
+1. Rédaction du script de création des objets fondamentaux p.27												CHECK MARK
 			C42-P2_01_CREATE_INFRA.pgsql
 
 
 
-2. Remplissage des tables de référence p.28
+2. Remplissage des tables de référence p.28																	PRESQUE CHECK MARK
 
 On vous demande de créer un script insérant les données des tables de référence unit et
 technical_specification. Pour comprendre tous les détails, voir la section Tables de référence et
@@ -12,7 +12,7 @@ tables de référence immuables.
 
 
 
-3. Remplissage des tables de référence immuables p.29
+3. Remplissage des tables de référence immuables p.29														CHECK MARK
 
 On vous demande de créer un script insérant les données des tables de référence state et
 operational_domain. Pour comprendre tous les détails, voir la section Tables de référence et tables
@@ -22,7 +22,7 @@ de référence immuables.
 			C42-P2_03_POPULATE_REF_IMMUTABLE.pgsql
 
 
-4. Modèles de drone p.30
+4. Modèles de drone p.30																					CHECK MARK
 
 On vous demande de mettre en place certains outils et les données concernant les modèles de drones.
 
@@ -31,7 +31,7 @@ On vous demande de mettre en place certains outils et les données concernant le
 			C42-P2_04_POPULATE_DRONE_MODELS.pgsql
 
 
-5. Localisations et employés p.31
+5. Localisations et employés p.31																			TEAM JULIEN requete 1-2
 
 On vous demande de mettre en place certains outils et les données liées aux employés.
 
@@ -39,7 +39,7 @@ On vous demande de mettre en place certains outils et les données liées aux em
 
 			C42-P2_05_HIRING.pgsql
 
-6. Acquisition de drones p.34
+6. Acquisition de drones p.34																				TEAM EDrine	requete 3-4
 
 On vous demande de mettre en place certains outils et les données liées à l’acquisition de drones.
 
@@ -48,7 +48,7 @@ On vous demande de mettre en place certains outils et les données liées à l�
 			C42-P2_06_DRONE_ACQUISITION.pgsql
 
 
-7. Gestion des états p.37
+7. Gestion des états p.37																					TEAM BEN requete 5-6
 
 Cette partie devient le point culminant du projet. On vous demande de mettre en place les outils
 d’automatisation de la gestion des états de drone.
