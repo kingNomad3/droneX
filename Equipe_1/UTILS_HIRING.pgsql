@@ -73,3 +73,11 @@ AS $$
 BEGIN
     RETURN floor(random() * 79 + 10)::INTEGER; 
 END$$;
+
+CREATE OR REPLACE FUNCTION random_shelf_height()
+	RETURNS INTEGER
+LANGUAGE PLPGSQL
+AS $$
+BEGIN
+    RETURN floor(random() * 26)::INTEGER; 
+END$$;
