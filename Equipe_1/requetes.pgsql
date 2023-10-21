@@ -12,15 +12,26 @@
 						o date d'acquisition des drones (décroissant)
 						o drone_tag (croissant)
 */
-SELECT 	(SELECT name FROM drone_model WHERE id = drone.model) AS model,
-		drone_tag, 
-		serial_number, 
-		(SELECT name FROM state WHERE symbol = (SELECT state FROM drone_state WHERE drone = drone.id)) AS etat,
-		(SELECT start_date_time FROM drone_state WHERE drone = drone.id) AS date_effectif
+SELECT (SELECT name 
+          FROM drone_model 
+		 WHERE id = drone.model) AS model,
+
+	   drone_tag, 
+
+	   serial_number, 
+
+	   (SELECT name 
+		  FROM state 
+		 WHERE symbol = (SELECT state 
+		                   FROM drone_state 
+						  WHERE drone = drone.id)) AS etat,
+
+	   (SELECT start_date_time 
+		  FROM drone_state 
+		 WHERE drone = drone.id) AS date_effectif
+
   FROM drone
  ORDER BY model ASC, acquisition_date DESC, drone_tag ASC;
- 
- 
  
  
 /* REQUETE 2
@@ -40,19 +51,28 @@ DATE 21-10-2023
 */
 
 
-SELECT 	(SELECT STRING_AGG(name, ',' ORDER BY name)  
-		   FROM operational_domain, drone_domain 
+   SELECT (SELECT STRING_AGG(name, ',' ORDER BY name)  
+		  FROM operational_domain, drone_domain 
 		  WHERE id = drone_domain.domain AND drone_domain.model = drone.model) AS domain_operationnel,
-		
-		(SELECT name FROM drone_model WHERE id = drone.model) AS model,
-		drone_tag AS drone_tag, 
+			
+		  (SELECT name 
+		  FROM drone_model 
+		  WHERE id = drone.model) AS model,
+			
+		  drone_tag AS drone_tag, 
 
-		(SELECT start_date_time FROM drone_state WHERE drone = drone.id AND state = 'D') AS date_disponibilite,
-		
-		(SELECT location FROM drone_state WHERE drone = drone.id AND state = 'D') AS localisation,
-		
-		(SELECT count(*) FROM state_note, drone_state WHERE drone_state = drone_state.id AND drone_state.drone = drone.id ) AS nb_inspection
+		  (SELECT start_date_time 
+		  FROM drone_state 
+	      WHERE drone = drone.id AND state = 'D') AS date_disponibilite,
+			
+		  (SELECT location 
+		  FROM drone_state 
+		  WHERE drone = drone.id AND state = 'D') AS localisation,
+			
+		  (SELECT count(*) 
+		  FROM state_note, drone_state 
+		  WHERE drone_state = drone_state.id AND drone_state.drone = drone.id ) AS nb_inspection
 
-  FROM drone
+	 FROM drone
  ORDER BY domain_operationnel ASC, model ASC, date_disponibilite ASC;
 
