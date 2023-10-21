@@ -21,7 +21,7 @@ CREATE OR REPLACE FUNCTION get_localisation_tag(building_code CHAR(2),
 LANGUAGE PLPGSQL
 AS $$
 DECLARE
-	pi_value DOUBLE PRECISION := 0.0;
+	localisation_tag DOUBLE PRECISION := 0.0;
 BEGIN
 	IF max_i <= 0 THEN
 		max_i := 1000;
