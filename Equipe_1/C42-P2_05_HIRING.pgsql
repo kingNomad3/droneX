@@ -16,9 +16,12 @@
 /*
 
 SELECT get_office_localisation_tag('GZ', 12, 'WHI', 122, 'a', 12);
+SELECT get_storage_localisation_tag('GZ', 12, 'WHI', 120, '<', 12, 0, 1);
 
 -- QUESTION
 -- Confirmer validation d'intrant
+-- 	RETURN 'GZ 000.WHI-100.A10'; ?
+
 
 */
 DROP FUNCTION IF EXISTS get_localisation_tag(building_code CHAR(2),
@@ -31,7 +34,15 @@ DROP FUNCTION IF EXISTS get_office_localisation_tag(building_code CHAR(2),
 														room_number INTEGER, office_type CHAR(1),
 														office_number INTEGER);
 
+DROP FUNCTION IF EXISTS get_office_localisation_tag();
 
+
+DROP FUNCTION IF EXISTS get_storage_localisation_tag(building_code CHAR(2),
+														floor_level INTEGER, color_tag CHAR(3),
+														room_number INTEGER, office_type CHAR(1),
+														storage_cabinet INTEGER,
+														shelf_height INTEGER,
+														storage_bin INTEGER);
 
 
 CREATE OR REPLACE FUNCTION get_localisation_tag(building_code CHAR(2),
@@ -113,5 +124,51 @@ END$$;
 
 
 
+CREATE OR REPLACE FUNCTION get_storage_localisation_tag(building_code CHAR(2),
+														floor_level INTEGER, color_tag CHAR(3),
+														room_number INTEGER, office_type CHAR(1),
+														storage_cabinet INTEGER,
+														shelf_height INTEGER,
+														storage_bin INTEGER)
+	RETURNS CHAR(20)
+LANGUAGE PLPGSQL
+AS $$
+DECLARE
+	storage_localisation_tag CHAR(20) := get_localisation_tag(building_code, floor_level, color_tag, room_number);
+BEGIN
+	IF office_type NOT IN ('^', '<', '>', 'v', 'x', '_') THEN
+		RAISE EXCEPTION 'Mauvais office_type';
+	END IF;
+	
+	storage_localisation_tag := storage_localisation_tag || '.' || office_type;
+	
+	IF storage_cabinet < 1 OR storage_cabinet > 20 THEN
+		RAISE EXCEPTION 'Mauvais storage_cabinet';
+	END IF;
+	storage_localisation_tag := storage_localisation_tag || CHR(storage_cabinet + 64);
+	
+	
+	IF shelf_height < 0 OR shelf_height > 25 THEN
+		RAISE EXCEPTION 'Mauvais shelf_height';
+	END IF;
+	
+	IF shelf_height = 0 THEN
+		storage_localisation_tag := storage_localisation_tag || 'Z';
+	ELSE
+		storage_localisation_tag := storage_localisation_tag || CHR(shelf_height + 64);
+	END IF;
 
+	IF storage_bin < 0 OR storage_bin > 99 THEN
+		RAISE EXCEPTION 'Mauvais storage_bin';
+	END IF;
+	
+	IF storage_bin < 10 THEN
+		storage_localisation_tag := storage_localisation_tag || LPAD(storage_bin::VARCHAR(2), 2, '0');
+	ELSE
+		storage_localisation_tag := storage_localisation_tag || storage_bin;
+	END IF;
+	
+	
+	RETURN storage_localisation_tag;
+END$$;
 
