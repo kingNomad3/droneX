@@ -396,13 +396,14 @@ DECLARE
 BEGIN
 
 	IF ssn_value IS NULL THEN
-		CALL hire(random_ssn, last_name_value, first_name_value, random_probation(), simulate_office_localisation_tag());
+		CALL hire(random_ssn::VARCHAR(32), last_name_value, first_name_value, random_probation(), simulate_office_localisation_tag());
 	ELSE
 		CALL hire(ssn_value, last_name_value, first_name_value, random_probation(), simulate_office_localisation_tag());
 	END IF;
 
 END$$;
 
+/*CALL */
 
 CALL simulate_hiring('Rémi', 'Chuet', '111111111');
 CALL simulate_hiring('Julien', 'Coulombe-Morency', '222222222');
@@ -417,6 +418,3 @@ CALL simulate_hiring('Éric', 'Labonté');
 CALL simulate_hiring('Jean-Marc', 'Deschamps');
 CALL simulate_hiring('Francis', 'Beauchemin-Côté');
 CALL simulate_hiring('Michelle', 'Girard');
-
-
-
