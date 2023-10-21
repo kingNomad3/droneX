@@ -176,7 +176,7 @@ CREATE OR REPLACE FUNCTION random_probation()
 LANGUAGE PLPGSQL
 AS $$
 BEGIN
-    RETURN random() < 0.5; 
+    RETURN random() < 0.75; 
 END$$;
 
 
@@ -391,7 +391,32 @@ CREATE OR REPLACE PROCEDURE simulate_hiring(last_name_value employee.last_name%T
 											 ssn_value employee.ssn%TYPE DEFAULT NULL)
 LANGUAGE PLPGSQL
 AS $$
-BEGIN	
-	CALL hire(ssn_value, last_name_value, first_name_value, random_probation(), simulate_office_localisation_tag());
+DECLARE
+	random_ssn INTEGER := random() * 100000001 + 100000000 ;
+BEGIN
+
+	IF ssn_value IS NULL THEN
+		CALL hire(random_ssn, last_name_value, first_name_value, random_probation(), simulate_office_localisation_tag());
+	ELSE
+		CALL hire(ssn_value, last_name_value, first_name_value, random_probation(), simulate_office_localisation_tag());
+	END IF;
+
 END$$;
+
+
+CALL simulate_hiring('Rémi', 'Chuet', '111111111');
+CALL simulate_hiring('Julien', 'Coulombe-Morency', '222222222');
+CALL simulate_hiring('Édouard', 'Blain-Noël', '333333333');
+CALL simulate_hiring('Catherine', 'Lavoie', '444444444');
+CALL simulate_hiring('Benjamin', 'Joinvile', '555555555');
+CALL simulate_hiring('François', 'Maltais', '666666666');
+
+CALL simulate_hiring('Jean-Christophe', 'Demers');
+CALL simulate_hiring('Frédéric', 'Thériault');
+CALL simulate_hiring('Éric', 'Labonté');
+CALL simulate_hiring('Jean-Marc', 'Deschamps');
+CALL simulate_hiring('Francis', 'Beauchemin-Côté');
+CALL simulate_hiring('Michelle', 'Girard');
+
+
 
