@@ -1,3 +1,4 @@
+DROP FUNCTION IF EXISTS random_shelf_height();
 DROP FUNCTION IF EXISTS random_office_number();
 DROP FUNCTION IF EXISTS random_office_type();
 DROP FUNCTION IF EXISTS random_room_number();
