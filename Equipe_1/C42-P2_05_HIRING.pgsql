@@ -102,6 +102,14 @@ BEGIN
 	RETURN office_localisation_tag;
 END$$;
 
+CREATE OR REPLACE FUNCTION get_office_localisation_tag()
+
+	RETURNS CHAR(18)
+LANGUAGE PLPGSQL
+AS $$
+BEGIN
+	RETURN 'GZ 000.WHI-100.A10';
+END$$;
 
 
 
