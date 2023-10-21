@@ -41,9 +41,12 @@ DROP FUNCTION IF EXISTS get_office_localisation_tag();
 DROP FUNCTION IF EXISTS get_office_localisation_tag(building_code CHAR(2),floor_level INTEGER, color_tag CHAR(3),room_number INTEGER, office_type CHAR(1),office_number INTEGER);
 DROP FUNCTION IF EXISTS get_localisation_tag(building_code CHAR(2),floor_level INTEGER, color_tag CHAR(3),room_number INTEGER);
 
+DROP FUNCTION IF EXISTS random_probation();
+DROP FUNCTION IF EXISTS random_storage_bin();
+DROP FUNCTION IF EXISTS random_storage_cabinet();
 DROP FUNCTION IF EXISTS random_shelf_height();
 DROP FUNCTION IF EXISTS random_office_number();
-DROP FUNCTION IF EXISTS random_office_type();
+DROP FUNCTION IF EXISTS random_office_type(office_type VARCHAR(10));
 DROP FUNCTION IF EXISTS random_room_number();
 DROP FUNCTION IF EXISTS random_floor_level();
 DROP FUNCTION IF EXISTS random_color_tag();
@@ -101,16 +104,24 @@ CREATE OR REPLACE FUNCTION random_room_number()
 LANGUAGE PLPGSQL
 AS $$
 BEGIN
-    RETURN floor(random() * 799 + 100)::INTEGER; 
+    RETURN floor(random() * 800 + 100)::INTEGER; 
 END$$;
 
 -- Return un office_type random entre A et J
-CREATE OR REPLACE FUNCTION random_office_type()
+CREATE OR REPLACE FUNCTION random_office_type(office_type VARCHAR(10))
     RETURNS CHAR(1)
 LANGUAGE PLPGSQL
 AS $$
+DECLARE
+    space_type CHAR(1)[] := ARRAY['<', '>',  '^', 'v', 'x', '_'];
 BEGIN
-    RETURN CHR(floor(random() * 9 + 65)::INTEGER); 
+
+	if (office_type = 'office') THEN
+    	RETURN CHR(floor(random() * 9 + 65)::INTEGER);
+	ELSE 
+		RETURN space_type[floor(random() * array_length(space_type, 1))::INTEGER + 1];
+	END IF; 
+
 END$$;
 
 -- Return un office_number random entre 10 et 89
@@ -119,7 +130,7 @@ CREATE OR REPLACE FUNCTION random_office_number()
 LANGUAGE PLPGSQL
 AS $$
 BEGIN
-    RETURN floor(random() * 79 + 10)::INTEGER; 
+    RETURN floor(random() * 80 + 10)::INTEGER; 
 END$$;
 
 -- Return un shelf_height random entre 0 et 25
@@ -129,6 +140,33 @@ LANGUAGE PLPGSQL
 AS $$
 BEGIN
     RETURN floor(random() * 26)::INTEGER; 
+END$$;
+
+-- Return un office_type random entre A et T
+CREATE OR REPLACE FUNCTION random_storage_cabinet()
+	RETURNS CHAR(1)
+LANGUAGE PLPGSQL
+AS $$
+BEGIN
+    RETURN CHR(floor(random() * 20 + 65)::INTEGER); 
+END$$;
+
+-- Return un shelf_height random entre 0 et 99
+CREATE OR REPLACE FUNCTION random_storage_bin()
+	RETURNS INTEGER
+LANGUAGE PLPGSQL
+AS $$
+BEGIN
+    RETURN floor(random() * 100)::INTEGER; 
+END$$;
+
+-- Return vrai ou faux
+CREATE OR REPLACE FUNCTION random_probation()
+	RETURNS BOOLEAN
+LANGUAGE PLPGSQL
+AS $$
+BEGIN
+    RETURN random() < 0.5; 
 END$$;
 
 
@@ -311,7 +349,7 @@ BEGIN
 
 	RETURN get_office_localisation_tag(random_building_code(0.85),
 														random_floor_level(), random_color_tag(),
-														random_room_number(), random_office_type(),
+														random_room_number(), random_office_type('office'),
 														random_office_number());
 END$$;
 
@@ -330,9 +368,9 @@ BEGIN
 
 	RETURN get_storage_localisation_tag(random_building_code(0.75),
 														random_floor_level(), random_color_tag(),
-														random_room_number(), random_office_type(),
+														random_room_number(), random_office_type('storage'),
 														random_storage_cabinet(),
-														random_shelf_height,
+														random_shelf_height(),
 														random_storage_bin());
 END$$;
 
