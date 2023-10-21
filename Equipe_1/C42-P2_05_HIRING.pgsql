@@ -13,6 +13,15 @@
 	C42-P2_05_HIRING.pgsql
 	V1.0
 */
+/*
+code : AA BBB.CCC-DDD[.xxxxx]
+
+*/
+DROP FUNCTION IF EXISTS get_localisation_tag(building_code CHAR(2),
+												floor_level INTEGER, color_tag CHAR(3),
+												room_number INTEGER);
+
+
 
 CREATE OR REPLACE FUNCTION get_localisation_tag(building_code CHAR(2),
 												floor_level INTEGER, color_tag CHAR(3),
@@ -21,15 +30,33 @@ CREATE OR REPLACE FUNCTION get_localisation_tag(building_code CHAR(2),
 LANGUAGE PLPGSQL
 AS $$
 DECLARE
-	localisation_tag DOUBLE PRECISION := 0.0;
+	localisation_tag CHAR(18) := '';
+	temp_string VARCHAR(10) := '';
 BEGIN
-	IF max_i <= 0 THEN
-		max_i := 1000;
+	IF building_code != 'GZ' AND building_code != 'XB' THEN
+		RAISE EXCEPTION 'Mauvaise building_code';
 	END IF;
-	FOR i IN 1..max_i LOOP
-		pi_value := pi_value + 1.0 / i^2;
-	END LOOP;
-	RETURN sqrt(6.0 * pi_value);
+	localisation_tag := localisation_tag || building_code;
+	
+	IF (floor_level >= 0) THEN
+		localisation_tag := localisation_tag || ' ' || LPAD(floor_level::VARCHAR(3), 3, '0') || '.';
+	END IF;
+	
+	IF (floor_level < 0) THEN
+		temp_string := 'S';
+		localisation_tag := localisation_tag || ' ' || temp_string || LPAD(abs(floor_level)::VARCHAR(3), 2, '0') || '.';
+	END IF;
+	
+	localisation_tag := localisation_tag || color_tag || '-';
+	
+	IF room_number < 100 OR room_number > 899 THEN
+		RAISE EXCEPTION 'Mauvais room_number';
+	END IF;
+	
+	localisation_tag := localisation_tag || room_number;
+	
+	RETURN localisation_tag;
 END$$;
+
 
 
