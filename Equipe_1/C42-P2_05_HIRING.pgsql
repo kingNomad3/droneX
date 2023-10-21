@@ -19,6 +19,16 @@ SELECT get_office_localisation_tag('GZ', 12, 'WHI', 122, 'a', 12);
 SELECT get_storage_localisation_tag('GZ', 12, 'WHI', 120, '<', 12, 0, 1);
 CALL hire('1232131', 'Jilen', 'Test', FALSE, get_office_localisation_tag('GZ', 12, 'WHI', 122, 'a', 12));
 CALL hire('123123', 'Remi', 'Test', TRUE);
+SELECT simulate_storage_localisation_tag();
+CALL simulate_hiring('Remi', 'Chuet', '121212121212');
+CALL simulate_hiring('Julien', 'Bob', '12231212121212');CALL simulate_hiring('Remi', 'Chuet', '1212121212123453');
+CALL simulate_hiring('Julien', 'Bob', '1212312121277');CALL simulate_hiring('Remi', 'Chuet', '1212121212113451');
+CALL simulate_hiring('Julien', 'Bob', '1212132121266');CALL simulate_hiring('Remi', 'Chuet', '121212121213451111');
+CALL simulate_hiring('Julien', 'Bob', '123145545562323');CALL simulate_hiring('Remi', 'Chuet', '12121234121222');
+CALL simulate_hiring('Julien', 'Bob', '121212121245444');CALL simulate_hiring('Remi', 'Chuet', '121245121212333');
+CALL simulate_hiring('Julien', 'Bob', '12121212451288');
+SELECT * from employee 	
+
 
 -- QUESTION
 -- Confirmer validation d'intrant
@@ -80,7 +90,7 @@ END$$;
 
 -- Return un random color tag
 CREATE OR REPLACE FUNCTION random_color_tag()
-	RETURNS INTEGER
+	RETURNS CHAR(3)
 LANGUAGE PLPGSQL
 AS $$
 DECLARE
@@ -144,11 +154,11 @@ END$$;
 
 -- Return un office_type random entre A et T
 CREATE OR REPLACE FUNCTION random_storage_cabinet()
-	RETURNS CHAR(1)
+	RETURNS INTEGER
 LANGUAGE PLPGSQL
 AS $$
 BEGIN
-    RETURN CHR(floor(random() * 20 + 65)::INTEGER); 
+    RETURN floor(random() * 20)::INTEGER; 
 END$$;
 
 -- Return un shelf_height random entre 0 et 99
@@ -381,8 +391,7 @@ CREATE OR REPLACE PROCEDURE simulate_hiring(last_name_value employee.last_name%T
 											 ssn_value employee.ssn%TYPE DEFAULT NULL)
 LANGUAGE PLPGSQL
 AS $$
-BEGIN
-	INSERT INTO employee (ssn,		first_name, 		last_name, 			status, 			office_room)
-	VALUES 				 (ssn_value, first_name_value, 	last_name_value, 	random_probation(), 	random_office());	
+BEGIN	
+	CALL hire(ssn_value, last_name_value, first_name_value, random_probation(), simulate_office_localisation_tag());
 END$$;
 
