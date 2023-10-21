@@ -1,6 +1,6 @@
 /*
 	Membres : 
-	
+
 	Julien Coulombe-Morency, 
 	Remi Chuet, 
 	Édouard Blain-Noël, 
@@ -17,6 +17,8 @@
 
 SELECT get_office_localisation_tag('GZ', 12, 'WHI', 122, 'a', 12);
 SELECT get_storage_localisation_tag('GZ', 12, 'WHI', 120, '<', 12, 0, 1);
+CALL hire('1232131', 'Jilen', 'Test', FALSE, get_office_localisation_tag('GZ', 12, 'WHI', 122, 'a', 12));
+CALL hire('123123', 'Remi', 'Test', TRUE);
 
 -- QUESTION
 -- Confirmer validation d'intrant
@@ -208,14 +210,23 @@ BEGIN
 		probation_value := 'probation'::employee_status;
 	ELSE 
 		probation_value := 'regular'::employee_status;	
-	END IF	
+	END IF;
 	
-	INSERT INTO employee
-		VALUES 	(first_name, 		last_name, 			status, 			office_room)
-				(first_name_value, 	last_name_value, 	probation_value, 	office_room_value);
+	INSERT INTO employee (ssn,		first_name, 		last_name, 			status, 			office_room)
+		VALUES 			(ssn_value, first_name_value, 	last_name_value, 	probation_value, 	office_room_value);
 
 END$$;
 
 
-CALL hire('123123123', 'Rems', 'Test', TRUE);
+
+
+CREATE OR REPLACE FUNCTION simulate_office_localisation_tag()
+	RETURNS CHAR(20)
+LANGUAGE PLPGSQL
+AS $$
+BEGIN
+	RETURN ;
+END$$;
+
+
 
