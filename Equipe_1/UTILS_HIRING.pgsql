@@ -8,9 +8,9 @@ DROP FUNCTION IF EXISTS random_building_code(range FLOAT);
 CREATE OR REPLACE FUNCTION random_building_code(range FLOAT)
 	RETURNS CHAR(2)
 LANGUAGE PLPGSQL
+AS $$
 DECLARE
     random_value FLOAT := random();
-AS $$
 BEGIN
 
     IF range < 0.85 THEN
@@ -28,19 +28,24 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION random_color_tag()
-	RETURNS CHAR(20)
+	RETURNS INTEGER
 LANGUAGE PLPGSQL
+DECLARE
+    random_value FLOAT := random();
 AS $$
 BEGIN
-	RETURN ;
+    RETURN  
 END$$;
 
+-- Return un floor level random entre -5 et 25
 CREATE OR REPLACE FUNCTION random_floor_level()
-	RETURNS CHAR(20)
+	RETURNS INTEGER
 LANGUAGE PLPGSQL
 AS $$
+DECLARE
+    random_value FLOAT := random();
 BEGIN
-	RETURN ;
+    RETURN floor(random() * 31 - 5)::INTEGER; 
 END$$;
 
 CREATE OR REPLACE FUNCTION random_room_number()
