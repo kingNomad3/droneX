@@ -21,6 +21,7 @@ SELECT get_storage_localisation_tag('GZ', 12, 'WHI', 120, '<', 12, 0, 1);
 -- QUESTION
 -- Confirmer validation d'intrant
 -- 	RETURN 'GZ 000.WHI-100.A10'; ?
+-- 	default table ? meme si procedure a un default
 
 
 */
@@ -43,6 +44,14 @@ DROP FUNCTION IF EXISTS get_storage_localisation_tag(building_code CHAR(2),
 														storage_cabinet INTEGER,
 														shelf_height INTEGER,
 														storage_bin INTEGER);
+DROP FUNCTION IF EXISTS get_storage_localisation_tag();
+
+
+DROP PROCEDURE hire(ssn_value employee.ssn%TYPE,
+								 last_name_value employee.last_name%TYPE,
+								 first_name_value employee.first_name%TYPE,
+								 probation BOOLEAN DEFAULT  TRUE,
+								 office_room_value employee.office_room%TYPE DEFAULT  get_office_localisation_tag());
 
 
 CREATE OR REPLACE FUNCTION get_localisation_tag(building_code CHAR(2),
@@ -171,4 +180,42 @@ BEGIN
 	
 	RETURN storage_localisation_tag;
 END$$;
+
+
+CREATE OR REPLACE FUNCTION get_storage_localisation_tag()
+
+	RETURNS CHAR(20)
+LANGUAGE PLPGSQL
+AS $$
+BEGIN
+	RETURN 'XB 000.MAG-600.^IZ00';
+END$$;
+
+
+
+CREATE OR REPLACE PROCEDURE hire(ssn_value employee.ssn%TYPE,
+								 last_name_value employee.last_name%TYPE,
+								 first_name_value employee.first_name%TYPE,
+								 probation BOOLEAN DEFAULT TRUE,
+								 office_room_value employee.office_room%TYPE
+								 DEFAULT get_office_localisation_tag())
+LANGUAGE PLPGSQL
+AS $$
+DECLARE 
+	probation_value employee_status;
+BEGIN
+	IF (probation) THEN
+		probation_value := 'probation'::employee_status;
+	ELSE 
+		probation_value := 'regular'::employee_status;	
+	END IF	
+	
+	INSERT INTO employee
+		VALUES 	(first_name, 		last_name, 			status, 			office_room)
+				(first_name_value, 	last_name_value, 	probation_value, 	office_room_value);
+
+END$$;
+
+
+CALL hire('123123123', 'Rems', 'Test', TRUE);
 
