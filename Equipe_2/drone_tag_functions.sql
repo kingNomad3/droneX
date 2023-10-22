@@ -47,7 +47,7 @@ LANGUAGE PLPGSQL
 AS 
 $$
 --DECLARE current_count INT := 1000 + (SELECT COUNT(*) FROM drone) * 10;
-DECLARE current_count INT := 1000 + decompte * 10; -- POUR TESTER SANS LA TABLE DRONE
+DECLARE current_count INT := 1000 + (decompte -1) * 10; -- POUR TESTER SANS LA TABLE DRONE
 BEGIN
 	RETURN TRANSLATE(LPAD(current_count::CHAR(6), 6, '0'), '0123456789', 'ZUDTQCSPHN');
 END
@@ -58,11 +58,13 @@ CREATE OR REPLACE FUNCTION generate_drone_tag (manufacturer_name VARCHAR(64), mo
 LANGUAGE PLPGSQL
 AS $$
 BEGIN
-	RETURN drone_tag_a($1) || drone_tag_b($2) || '-' || drone_tag_c($3) || '-' || drone_tag_d(n);
+	--RETURN drone_tag_a($1) || drone_tag_b($2) || '-' || drone_tag_c($3) || '-' || drone_tag_d();
+	RETURN drone_tag_a($1) || drone_tag_b($2) || '-' || drone_tag_c($3) || '-' || drone_tag_d($4);
 END
 $$;
 
-SELECT generate_drone_tag('Parrot', 'Disco', '2020-04-12', 2772)
+-- Ce call fonctionne correctement. 
+-- SELECT generate_drone_tag('Parrot', 'Disco', '2020-04-12', 1)
 
 
 
