@@ -16,7 +16,6 @@
 
 
 -- Transaction pour l'insertion dans la table operational_domain :
-
 -- Fonction d'insertion:
 
 

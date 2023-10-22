@@ -92,7 +92,7 @@ AS $$
 		VALUES((SELECT id FROM drone_model WHERE name=model_name),(SELECT id FROM technical_specification WHERE name = spec_name), spec_value ,spec_comments);
 $$;
 
-BEING;
+BEGIN;
 	CALL add_drone_specification($$Matrice 350 RTK$$, $$Autonomie d'opération$$, $$55$$, 'La durée peut varier en fonction des conditions de vol.');
 	CALL add_drone_specification($$Matrice 350 RTK$$, $$Précision de positionnement$$, $$1$$, 'Grâce à la technologie RTK.');
 	CALL add_drone_specification($$Matrice 350 RTK$$, $$Portée de communication$$, $$15$$, 'Dans des conditions optimales sans interférence.');
