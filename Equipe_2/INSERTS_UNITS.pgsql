@@ -1,4 +1,9 @@
-DEALLOCATE ins_unit;
+-- possiblement qu'il faut caller DEALLOCATE et déboguer un peu, mais les insertions peuvent marcher (elles roulent)
+
+--DEALLOCATE ins_unit;
+--DEALLOCATE ins_technical_specification;
+
+
 
 PREPARE ins_unit(VARCHAR(16),VARCHAR(64), VARCHAR(1024)) AS 
 INSERT INTO unit(symbol, name , description)VALUES ($1,$2,$3);
@@ -77,7 +82,7 @@ BEGIN;
 COMMIT;
 
 -- SELECT * FROM unit
-DEALLOCATE ins_technical_specification;
+--DEALLOCATE ins_technical_specification;
 
 PREPARE ins_technical_specification(VARCHAR(64),VARCHAR(512),VARCHAR(16)) AS 
 INSERT INTO technical_specification(name, description, unit) VALUES ($1,$2,(SELECT id FROM unit WHERE symbol = $3));
@@ -168,7 +173,66 @@ BEGIN;
 	EXECUTE ins_technical_specification($$Type batterie$$, $$Technologie de la batterie utilisée (LiPo, NiMH, Li-Ion...)$$, NULL);
 	EXECUTE ins_technical_specification($$Divers$$, $$Autres caractéristiques notables du drone$$, NULL);
 COMMIT;
-
+--'
 -- SELECT * FROM technical_specification
 --SELECT * FROM technical_specification
 --  JOIN unit ON technical_specification.unit = unit.id;
+
+CREATE OR REPLACE PROCEDURE add_drone_manufacturer(name_value VARCHAR(64), web_site_value VARCHAR(256))
+LANGUAGE SQL
+AS $$
+	INSERT INTO manufacturing_company(name , web_site) VALUES (name_value, web_site_value);
+$$;
+
+BEGIN;
+	CALL add_drone_manufacturer($$DJI Enterprise$$, 'https://enterprise.dji.com/');
+	CALL add_drone_manufacturer($$Parrot$$, 'https://www.parrot.com/us');
+	CALL add_drone_manufacturer($$AgEagle$$, 'https://ageagle.com/');
+	CALL add_drone_manufacturer($$Quantum Systems$$, 'https://quantum-systems.com/');
+	CALL add_drone_manufacturer($$Lilium$$, 'https://lilium.com/');
+	CALL add_drone_manufacturer($$Bell$$, 'https://www.bellflight.com/');
+	CALL add_drone_manufacturer($$Clear Path Robotics$$, 'https://clearpathrobotics.com/');
+	CALL add_drone_manufacturer($$Teledyne Flir$$, 'https://www.flir.ca/');
+	CALL add_drone_manufacturer($$Boston Dynamics$$, 'https://bostondynamics.com/');
+	CALL add_drone_manufacturer($$Oceanα$$, 'https://www.oceanalpha.com/');
+	CALL add_drone_manufacturer($$Blueye$$, 'https://www.blueyerobotics.com/');
+	CALL add_drone_manufacturer($$Deep Trekker$$, 'https://www.deeptrekker.com/');
+COMMIT;
+										
+--SELECT * FROM manufacturing_company;	
+--SELECT * FROM unit;
+--SELECT * FROM technical_specification;
+								
+CREATE OR REPLACE PROCEDURE add_drone_model(name_value drone_model.name%type, 
+											manufacturer manufacturing_company.name%type, 
+											domains_value VARCHAR, --temporaire
+											description_value drone_model.description%type, 
+											web_site_value drone_model.web_site%type)
+LANGUAGE SQL
+AS $$
+	INSERT INTO drone_model(name, manufacturer, description, web_site) 
+         VALUES ($1, (SELECT id FROM manufacturing_company WHERE name = $2), $4, $5);
+	-- add to drone_domain le id de ce nouveau drone, et le domain ($3)
+$$;
+										
+call add_drone_model($$Matrice 350 RTK$$, $$DJI Enterprise$$, $$Vol à vue$$, $$Drone aérien pour la surveillance et l'inspection avec caméra thermique avancée.$$, 'https://enterprise.dji.com/matrice-350-rtk');
+call add_drone_model($$Anafi AI$$, $$Parrot$$, $$Vol à vue$$, $$Drone aérien léger avec capacités de zoom pour des opérations de reconnaissance.$$, 'https://www.parrot.com/us/drones/anafi-ai');
+call add_drone_model($$eBee X$$, $$AgEagle$$, $$Troposphérique$$, $$Drone aérien conçu pour surveiller et gérer les cultures agricoles.$$, 'https://ageagle.com/drones/ebee-x/');
+call add_drone_model($$Trinity F90+$$, $$Quantum Systems$$, $$Troposphérique$$, $$VTOL aérien pour la surveillance et la cartographie à longue portée. (VTOL = décollage et atterrissage verticaux)$$, 'https://quantum-systems.com/call trinity-f90/');
+call add_drone_model($$Lilium Jet$$, $$Lilium$$, $$Troposphérique$$, $$Aéronef électrique pour le transport urbain avec capacités VTOL (décollage et atterrissage verticaux).$$, 'https://lilium.com/jet');
+call add_drone_model($$Bell APT$$, $$Bell$$, $$Troposphérique$$, $$Drone aérien VTOL pour la logistique et la livraison, capable de transporter des charges importantes sur de courtes et moyennes distances. (VTOL = décollage et atterrissage call verticaux)$$, 'https://www.bellflight.com/products/bell-apt');
+call add_drone_model($$Husky$$, $$Clear Path Robotics$$, $$Roulant$$, $$Robot terrestre autonome pour la recherche et l'inspection.$$, 'https://clearpathrobotics.com/husky-unmanned-ground-vehicle-robot/');
+call add_drone_model($$Black Hornet PRS$$, $$Teledyne Flir$$, $$Vol à vue$$, $$Nano-drone aérien pour la reconnaissance militaire et la surveillance.$$, 'https://www.flir.com/products/black-hornet-prs/');
+call add_drone_model($$Spot$$, $$Boston Dynamics$$, $$Appendiculaire$$, $$Robot terrestre pour l'inspection et la cartographie de terrains difficiles.$$, 'https://bostondynamics.com/products/spot/');
+call add_drone_model($$Dolphin 1$$, $$Oceanα$$, $$De surface$$, $$Véhicule marin sans pilote pour la surveillance et le sauvetage.$$, 'https://www.oceanalpha.com/product-item/dolphin1/');
+call add_drone_model($$Blueye Pioneer$$, $$Blueye$$, $$Pélagique$$, $$Drone sous-marin pour les inspections et observations marines.$$, 'https://www.blueyerobotics.com/products/pioneer');
+call add_drone_model($$DTG3$$, $$Deep Trekker$$, $$Pélagique$$, $$ROV sous-marin pour les inspections sous-marines et la recherche.$$, 'https://www.deeptrekker.com/products/underwater-rov/dtg3-b');
+call add_drone_model($$Phantom 4 RTK$$, $$DJI Enterprise$$, $$Vol à vue$$, $$Drone aérien pour la cartographie et la photogrammétrie de précision.$$, 'https://enterprise.dji.com/phantom-4-rtk');
+call add_drone_model($$Vector$$, $$Quantum Systems$$, $$Troposphérique$$, $$VTOL aérien pour les opérations de surveillance discrètes.$$, 'https://quantum-systems.com/vector/');
+call add_drone_model($$Anafi Thermal$$, $$Parrot$$, $$Troposphérique$$, $$Drone aérien avec caméra thermique pour les opérations de recherche et de sauvetage.$$, 'https://www.parrot.com/en/drones/anafi-thermal');
+call add_drone_model($$PackBot 510$$, $$Teledyne Flir$$, $$Chenillé$$, $$Robot terrestre pour la reconnaissance, surveillance et interventions en zones dangereuses.$$, 'https://www.flir.com/products/packbot/');
+--call add_drone_model($$PowerEgg X$$, $$PowerVision$$, $$Vol à vue&De surface$$, $$Drone multifonctionnel capable de suivi par intelligence artificielle, d'enregistrement 4K et d'opérations étanches dans les aires et sur l'eau.$$, 'https://www.powervision.me/en/product/powereggx/');
+
+--SELECT * FROM drone_model
+										
+--SELECT * FROM manufacturing_company;
