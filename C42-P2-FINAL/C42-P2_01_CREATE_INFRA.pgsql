@@ -195,7 +195,6 @@ CREATE TABLE unit(
 	
 	CONSTRAINT pk_unit PRIMARY KEY(id),
 	CONSTRAINT uc_unit_name UNIQUE (name),
-	CONSTRAINT uc_unit_symbol UNIQUE (symbol),
 	CONSTRAINT cc_unit_name  CHECK (LENGTH(name) > 0),
 	CONSTRAINT cc_unit_symbol CHECK (LENGTH(symbol) > 0),
 	CONSTRAINT cc_unit_description CHECK (LENGTH(description) >= 10 OR description = NULL)
