@@ -41,3 +41,30 @@ BEGIN
 END$$;
 
 
+--CREATE OR REPLACE FUNCTION drone_tag_d () RETURNS CHAR(6)
+CREATE OR REPLACE FUNCTION drone_tag_d (decompte INT) RETURNS CHAR(6) -- POUR TESTER SANS LA TABLE DRONE
+LANGUAGE PLPGSQL
+AS 
+$$
+--DECLARE current_count INT := 1000 + (SELECT COUNT(*) FROM drone) * 10;
+DECLARE current_count INT := 1000 + decompte * 10; -- POUR TESTER SANS LA TABLE DRONE
+BEGIN
+	RETURN TRANSLATE(LPAD(current_count::CHAR(6), 6, '0'), '0123456789', 'ZUDTQCSPHN');
+END
+$$;
+
+--CREATE OR REPLACE FUNCTION generate_drone_tag (manufacturer_name VARCHAR(64), model_name VARCHAR(64), acquisition_date DATE) RETURNS CHAR(20)
+CREATE OR REPLACE FUNCTION generate_drone_tag (manufacturer_name VARCHAR(64), model_name VARCHAR(64), acquisition_date DATE, n int) RETURNS CHAR(20)
+LANGUAGE PLPGSQL
+AS $$
+BEGIN
+	RETURN drone_tag_a($1) || drone_tag_b($2) || '-' || drone_tag_c($3) || '-' || drone_tag_d(n);
+END
+$$;
+
+SELECT generate_drone_tag('Parrot', 'Disco', '2020-04-12', 2772)
+
+
+
+
+	
