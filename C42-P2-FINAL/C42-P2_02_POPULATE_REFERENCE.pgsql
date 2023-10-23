@@ -15,7 +15,7 @@
 */
 
 
-DEALLOCATE ins_unit;
+
 
 PREPARE ins_unit(VARCHAR(16),VARCHAR(64), VARCHAR(1024)) AS 
     INSERT INTO unit(symbol, name , description)VALUES ($1,$2,$3);
@@ -93,9 +93,9 @@ BEGIN;
 	EXECUTE ins_unit($$x$$, $$Zoom$$, $$Facteur de multiplication ou d''agrandissement, par exemple, x4 signifie 'quatre fois plus grand'$$);
 COMMIT;
 
--- SELECT * FROM unit
+DEALLOCATE ins_unit;
 
-DEALLOCATE ins_technical_specification;
+
 
 PREPARE ins_technical_specification(VARCHAR(64),VARCHAR(512),VARCHAR(16)) AS 
 INSERT INTO technical_specification(name, description, unit) VALUES ($1,$2,(SELECT id FROM unit WHERE symbol = $3));
@@ -187,7 +187,7 @@ BEGIN;
 	EXECUTE ins_technical_specification($$Divers$$, $$Autres caractéristiques notables du drone$$, NULL);
 COMMIT;
 
--- SELECT * FROM technical_specification
+DEALLOCATE ins_technical_specification;
 
 
 
