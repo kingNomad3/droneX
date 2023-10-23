@@ -95,6 +95,11 @@ BEGIN
 	IF model_name_temp IS NOT NULL AND spec_name_temp IS NOT NULL THEN
 		INSERT INTO drone_specification(drone_model, specification, value, comments) 
 			VALUES(model_name_temp, spec_name_temp, spec_value ,spec_comments);
+	ELSE
+		RAISE NOTICE 'Tentative d''insertion impossible dans drone_specification : model_name(%) ; spec_name(%)', model_name_temp, spec_name_temp;
+		RAISE NOTICE 'Paramêtre d''insertion : model_name(%) ; spec_name(%) ; spec_value(%) ; spec_comments(%...)', model_name, spec_name, spec_value, LEFT(spec_comments, 20);
+		RAISE NOTICE 'Insertion ignoré, veuillez ajuster la valeur d''insertion si haut ultérieurement.
+						 ';
 	END IF;
 END$$;
 						 
@@ -266,8 +271,6 @@ BEGIN;
 	CALL add_drone_specification($$PowerEgg X$$, $$Divers$$, $$Synchronisation vocale$$, 'Synchronise n''importe quelle source sonore sans fil en temps réel.');
 
 COMMIT;
-
-select * from drone_specification
 
 
 
