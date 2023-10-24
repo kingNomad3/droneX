@@ -84,6 +84,27 @@ $$;
 
 -- select * from drone_model
 --select * from drone
+CREATE OR REPLACE FUNCTION find_name_employee(
+ssn.employee employee.ssn%TYPE) 
+LANGUUAGE PLPGSQL
+
+DECALRE receiving_employee_first_name employee.first_name%TYPE;
+	receiving_employee_last_name employee.last_name%TYPE;  
+	registering_employee_first_name employee.first_name%TYPE; 
+	registering_employee_last_name employee.last_name%TYPE; 
+AS 
+$$ 
+BEGIN
+END
+$$;
+
+
+
+
+
+
+
+
 
 CREATE OR REPLACE PROCEDURE add_drone_acquisition(
 model_name drone_model.name%TYPE,
@@ -96,6 +117,7 @@ unpacking_employee employee.ssn%TYPE)
 LANGUAGE PLPGSQL 
 AS 
 $$
+		
 BEGIN
 --1er partie fonctionnelle, mais non-testée
 	INSERT INTO drone (model, serial_number, drone_tag, acquisition_date) 
@@ -103,7 +125,7 @@ BEGIN
 		
 --2 partie
 	INSERT INTO drone_state (drone, state, employee, start_date_time, location)
-		VALUES ((SELECT id FROM drone_model WHERE name = model_name), 'I', registering_employee, registering_timestamp, simulate_storage_localisation_tag());
+		VALUES ((SELECT id FROM drone_model WHERE name = model_name), 'I', registering_employee, registering_timestamp, simulate_storage_localisation_tag()); -- à disctuer en équipe ce qu'on fait par rapport au state en fonction des triggers de drone_state
 
 --3e partie
 -- 	INSERT INTO state_note (drone_state, note, date_time, employee, details)
