@@ -25,12 +25,12 @@ INSERT INTO drone_state(drone, state, employee, start_date_time, location) VALUE
 INSERT INTO drone_state(drone, state, employee, start_date_time, location) VALUES (1, 'T', 1,'2000-06-01', 'dasda');
 INSERT INTO drone_state(drone, state, employee, start_date_time, location) VALUES (1, 'P', 1,'2000-07-01', 'dasda');
 
--- Le insert pour tester les fonctions
+-- Le insert pour tester les fonctions (s'assurer que les fonctions et le trigger sont créés avant de rouler)
 INSERT INTO drone_state(drone, state, employee, start_date_time, location) VALUES (1, 'D', 1,'2000-08-01', 'dasda');
 
 INSERT INTO drone_state(drone, state, employee, start_date_time, location) VALUES (1, 'D', 1,'2000-09-01', 'dasda');
 																	  
-
+SELECT * from drone_state
 /**********************************************************************/
 
 
@@ -53,6 +53,26 @@ $$ LANGUAGE PLPGSQL;
 -- SELECT get_next_accepted_state('I')
 /**********************************************************************/
 
+/****************************** Récupérer le prochain next_rejected_state *******************/
+--DROP FUNCTION IF EXISTS get_next_rejected_state(symbol_param CHAR(1));																				   
+CREATE OR REPLACE FUNCTION get_next_rejected_state(symbol_param CHAR(1)) 
+RETURNS CHAR(1)
+AS $$
+DECLARE 
+	n_r_state CHAR(1);
+BEGIN
+	n_r_state := (SELECT next_rejected_state
+			  	  FROM state
+			      WHERE symbol = symbol_param);		  
+	RETURN n_r_state;
+END
+$$ LANGUAGE PLPGSQL;
+
+-- TEST :
+-- SELECT get_next_rejected_state('I')
+/**********************************************************************/
+
+
 /****************************** Récupérer l'insert le plus recent avec drone *******************/
 --DROP FUNCTION IF EXISTS get_most_recent_insert_state(drone_param INTEGER);
 CREATE OR REPLACE FUNCTION get_most_recent_insert_state(drone_param INTEGER) 
@@ -68,11 +88,7 @@ BEGIN
 				  LIMIT 1);		  
 	RETURN old_state;
 END
-$$ LANGUAGE PLPGSQL;
-
-SELECT get_most_recent_insert_state(1)
-																				   
-
+$$ LANGUAGE PLPGSQL;																	  
 /************************************************************/
 
 
@@ -98,6 +114,8 @@ DECLARE
 																				   
 	old_state CHAR(1);																			   
 	old_state_next_accepted_state CHAR(1);
+	old_state_next_rejected_state CHAR(1);
+	
 	-- AIDE MEMOIRE
 	
 	validate_next_accepted_state BOOLEAN;
@@ -120,12 +138,13 @@ BEGIN
 	
 	old_state := (SELECT get_most_recent_insert_state(drone));
 	old_state_next_accepted_state := (SELECT get_next_accepted_state(old_state));
+	old_state_next_rejected_state := (SELECT get_next_rejected_state(old_state));
 																				  
-	IF old_state_next_accepted_state = state THEN
+	IF state = old_state_next_accepted_state OR state = old_state_next_rejected_state THEN
  		insert_correct := true;
 		RAISE NOTICE 'BONNE INSERTION'; 
 	ELSE 
-		RAISE NOTICE 'MAUVAISE INSERTION LE STATE DOIT EGAL %', old_state_next_accepted_state;
+		RAISE NOTICE 'MAUVAISE INSERTION LE STATE DOIT EGAL a % ou a %', old_state_next_accepted_state, old_state_next_rejected_state;
 	END IF;
  
  
