@@ -102,8 +102,13 @@ BEGIN
 		VALUES ((SELECT id FROM drone_model WHERE name = model_name), serial_drone, generate_drone_tag(model_name, receiving_date), receiving_date);
 		
 --2 partie
--- 	INSERT INTO drone_state (drone, state, employee, start_time_time, location)
--- 		VALUES (())
+	INSERT INTO drone_state (drone, state, employee, start_date_time, location)
+		VALUES ((SELECT id FROM drone_model WHERE name = model_name), 'I', registering_employee, registering_timestamp, simulate_storage_localisation_tag());
+
+--3e partie
+-- 	INSERT INTO state_note (drone_state, note, date_time, employee, details)
+-- 		VALUES ((SELECT id FROM drone_state WHERE drone = (SELECT id FROM drone_model WHERE name = model_name),'general_observation',registering_timestamp, 'Received by :' || receiving_employee || 'on' || receiving_date || 'saut de ligne ??' || 'Unpacked by : ' || registering_employee ));
+		--les employées sont référés par leur ssn FAIRE UN SELECT
 
 END
 $$;
