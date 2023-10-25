@@ -88,12 +88,18 @@ DATE 25-10-2023
 			
 					o prénom											employee
 					o nom de famille									employee
+<<<<<<< HEAD
 					o le nombre de transitions acceptées				
 					o le nombre de transitions rejetées                 
 					o le ratio de transitions rejetées				    
 					
 					T, P, D, L, 	I (desfois) accepté
 					R, U, H, 		I (desfois) refusé
+=======
+					o le nombre de transitions acceptées				state_note COUNT(ok)
+					o le nombre de transitions rejetées					state_note COUNT(BERK) AS berk
+					o le ratio de transitions rejetées					state_note / berk
+>>>>>>> 2eb8390b48363f06555ba752e22fe24c3fcd84c2
 */
 
 
