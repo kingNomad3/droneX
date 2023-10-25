@@ -83,7 +83,7 @@ $$
 $$;
 
 
--- DROP PROCEDURE add_drone_acquisition
+-- DROP PROCEDURE add_drone_acquisition;
 CREATE OR REPLACE PROCEDURE add_drone_acquisition(
 model_name drone_model.name%TYPE,
 serial_drone drone.serial_number%TYPE, --DRONE TAG(drone.drone_tag%TYPE) OU DRONE SERIAL NUMBER (drone.serial_number%TYPE)
@@ -102,29 +102,22 @@ BEGIN
 --1er partie fonctionnelle, mais non-testée
 	INSERT INTO drone (model, serial_number, drone_tag, acquisition_date) 
 		VALUES ((SELECT id FROM drone_model WHERE name = model_name), serial_drone, generate_drone_tag(model_name, receiving_date), receiving_date);
-		
+	
 --2 partie
 	INSERT INTO drone_state (drone, state, employee, start_date_time, location)
-		VALUES ((SELECT id FROM drone_model WHERE name = model_name), drone_initial_state, (SELECT id FROM employee WHERE ssn = registering_employee), registering_timestamp, SELECT simulate_storage_localisation_tag()); -- à disctuer en équipe ce qu'on fait par rapport au state en fonction des triggers de drone_state
+		VALUES ((SELECT id FROM drone WHERE serial_number = serial_drone), drone_initial_state, (SELECT id FROM employee WHERE ssn = registering_employee), registering_timestamp, simulate_storage_localisation_tag()); -- à disctuer en équipe ce qu'on fait par rapport au state en fonction des triggers de drone_state
 
 --3e partie
 	INSERT INTO state_note (drone_state, note, date_time, employee, details)
-		VALUES ((SELECT id FROM drone_state WHERE drone = (SELECT id FROM drone_model WHERE name = model_name)), note_type_initial, registering_timestamp, 'Received by :' || (SELECT id FROM employee WHERE ssn = receiving_employee) || 'on' || receiving_date || E'\n' || 'Unpacked by : ' || (SELECT id FROM employee WHERE ssn = unpacking_employee));
+		VALUES (
+			(SELECT id FROM drone_state WHERE drone = (SELECT id FROM drone WHERE serial_number = serial_drone)), 
+			note_type_initial,
+			registering_timestamp, 
+			(SELECT id FROM employee WHERE ssn = receiving_employee),
+			'Received by : ' || (SELECT first_name || ' ' || last_name FROM employee WHERE ssn = receiving_employee) || ' on ' || receiving_date || E'\n' || ' Unpacked by : ' || (SELECT first_name || ' ' || last_name FROM employee WHERE ssn = unpacking_employee));
 
 END
 $$;
--- select * from drone_model;
--- select * from employee;
--- select * from drone;
--- select * from drone_state;
 
-CALL add_drone_acquisition(
-	'Matrice 350 RTK', 'kfjgl3www3', '222222222', NOW()::TIMESTAMP, '157403807', NOW()::date, '147683384');
-	
--- model_name drone_model.name%TYPE,
--- serial_drone drone.serial_number%TYPE, --DRONE TAG(drone.drone_tag%TYPE) OU DRONE SERIAL NUMBER (drone.serial_number%TYPE)
--- registering_employee employee.ssn%TYPE, 
--- registering_timestamp drone_state.start_date_time%TYPE, 
--- receiving_employee employee.ssn%TYPE, 
--- receiving_date drone.acquisition_date%TYPE, 
--- unpacking_employee employee.ssn%TYPE)
+-- CALL add_drone_acquisition(
+-- 	'Matrice 350 RTK', 'kfj0563www3', '222222222', NOW()::TIMESTAMP, '142754032', NOW()::date, '134132158');
