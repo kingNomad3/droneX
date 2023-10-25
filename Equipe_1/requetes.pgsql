@@ -87,7 +87,7 @@ DATE 25-10-2023
 			cette présentation :
 					o prénom											employee
 					o nom de famille									employee
-					o le nombre de transitions acceptées				
-					o le nombre de transitions rejetées
-					o le ratio de transitions rejetées				
+					o le nombre de transitions acceptées				state_note COUNT(ok)
+					o le nombre de transitions rejetées					state_note COUNT(BERK) AS berk
+					o le ratio de transitions rejetées					state_note / berk
 */
