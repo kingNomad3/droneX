@@ -105,7 +105,7 @@ CREATE OR REPLACE FUNCTION random_floor_level()
 LANGUAGE SQL
 AS $$
     RETURN floor(random() * 31 - 5)::INTEGER; 
-	$$;
+$$;
 
 -- Return un room_number random entre 100 et 899
 CREATE OR REPLACE FUNCTION random_room_number()

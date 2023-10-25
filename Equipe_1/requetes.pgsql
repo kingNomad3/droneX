@@ -85,9 +85,59 @@ DATE 25-10-2023
 			Pour chaque employé, on désire connaitre le nombre de fois qu'il.elle a accepté.e positivement
 			et négativement la transition d'un état à un autre (on considère toutes les transitions). On désire
 			cette présentation :
+			
 					o prénom											employee
 					o nom de famille									employee
 					o le nombre de transitions acceptées				
-					o le nombre de transitions rejetées
-					o le ratio de transitions rejetées				
+					o le nombre de transitions rejetées                 
+					o le ratio de transitions rejetées				    
+					
+					T, P, D, L, 	I (desfois) accepté
+					R, U, H, 		I (desfois) refusé
 */
+
+
+CREATE OR REPLACE FUNCTION is_accepted_state(
+	state_value state.symbol%TYPE,
+	id_drone_value drone.id%TYPE,
+	start_date_time_value state.start_date_time%TYPE
+)
+RETURNS BOOLEAN
+LANGUAGE PLPGSQL
+AS $$
+BEGIN
+
+	IF state_value IN ('T','P','D','L') THEN
+		RETURN TRUE;
+	ELSEIF state_value = 'I' THEN
+		IF (SELECT state FROM drone_state WHERE start_date_time_value > start_date_time ORDER BY start_date_time DESC LIMIT 1 )
+		
+	END IF;
+	
+	RETURN FALSE;
+END$$;
+
+
+
+
+
+
+
+SELECT 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
