@@ -106,7 +106,7 @@ DATE 25-10-2023
 CREATE OR REPLACE FUNCTION is_accepted_state(
 	state_value state.symbol%TYPE,
 	id_drone_value drone.id%TYPE,
-	start_date_time_value state.start_date_time%TYPE
+	start_date_time_value drone_state.start_date_time%TYPE
 )
 RETURNS BOOLEAN
 LANGUAGE PLPGSQL
@@ -140,9 +140,58 @@ SELECT
 
 
 
+CREATE OR REPLACE FUNCTION is_accepted_state(
+    state_value state.symbol%TYPE,
+    id_drone_value drone.id%TYPE,
+    start_date_time_value drone_state.start_date_time%TYPE
+)
+RETURNS BOOLEAN
+LANGUAGE PLPGSQL
+AS $$
+BEGIN
+    -- Vérifier si l'état est accepté
+    IF state_value IN ('T','P','D','L') THEN
+        RETURN TRUE;
+		
+	-- Si etat est I
+    ELSIF state_value = 'I' THEN
+        -- Vérifier la transition précédente
+        DECLARE
+            previous_state state.symbol%TYPE;
+        BEGIN
+            SELECT state INTO previous_state
+            FROM drone_state
+            WHERE id_drone = id_drone_value
+                AND start_date_time < start_date_time_value
+            ORDER BY start_date_time DESC
+            LIMIT 1;	-- recuperer seulement 1
+        
+            -- Si la transition avant est 'R', 'U' ou 'H', elle est mauvaise
+            IF previous_state IN ('R', 'U', 'H') THEN
+                RETURN FALSE;
+            ELSE
+                RETURN TRUE; -- Sinon, elle est acceptée
+            END IF;
+        END;
+    END IF;
+    
+    -- Par défaut, la transition est mauvaise (pcq il me faut un return de base)
+    RETURN FALSE;
+END;
+$$;
 
 
-
+-- FILTER permet de compter le nombre de fois que l'on retourne TRUE ou FALSE
+SELECT
+    emp.first_name AS prénom,		-- prenom
+    emp.last_name AS nom_de_famille,		-- nom
+    COUNT(*) FILTER (WHERE is_accepted_state(drone_state.state, drone_state.drone, drone_state.start_date_time) = TRUE) AS nbr_transitions_acceptées,
+    COUNT(*) FILTER (WHERE is_accepted_state(drone_state.state, drone_state.drone, drone_state.start_date_time) = FALSE) AS nbr_transitions_rejetées,
+COUNT(*) FILTER (WHERE is_accepted_state(drone_state.state, drone_state.drone, drone_state.start_date_time) = FALSE)::NUMERIC /
+    COUNT(*) FILTER (WHERE is_accepted_state(drone_state.state, drone_state.drone, drone_state.start_date_time) = TRUE)::NUMERIC AS ratio_transitions_rejetées FROM employee emp
+JOIN drone_state ON emp.id = drone_state.drone
+GROUP BY emp.id, emp.first_name, emp.last_name
+ORDER BY emp.last_name, emp.first_name;
 
 
 
