@@ -29,13 +29,6 @@ CALL simulate_hiring('Julien', 'Bob', '121212121245444');CALL simulate_hiring('R
 CALL simulate_hiring('Julien', 'Bob', '12121212451288');
 SELECT * from employee 	
 
-
--- QUESTION
--- Confirmer validation d'intrant
--- 	RETURN 'GZ 000.WHI-100.A10'; ?
--- 	default table ? meme si procedure a un default
-
-
 */
 
 DROP PROCEDURE IF EXISTS simulate_hiring(last_name_value employee.last_name%TYPE,first_name_value employee.first_name%TYPE,ssn_value employee.ssn%TYPE);
@@ -73,7 +66,6 @@ AS $$
 DECLARE
     random_value FLOAT := random();
 BEGIN
-
     IF range < 0.85 THEN
         RETURN CASE
             WHEN random_value <= range THEN 'XB'
@@ -85,7 +77,6 @@ BEGIN
             ELSE 'XB'
         END;
     END IF;
-
 END$$;
 
 -- Return un random color tag
@@ -102,20 +93,18 @@ END$$;
 -- Return un floor level random entre -5 et 25
 CREATE OR REPLACE FUNCTION random_floor_level()
 	RETURNS INTEGER
-LANGUAGE PLPGSQL
+LANGUAGE SQL
 AS $$
-BEGIN
     RETURN floor(random() * 31 - 5)::INTEGER; 
-END$$;
+$$;
 
 -- Return un room_number random entre 100 et 899
 CREATE OR REPLACE FUNCTION random_room_number()
 	RETURNS INTEGER
-LANGUAGE PLPGSQL
+LANGUAGE SQL
 AS $$
-BEGIN
     RETURN floor(random() * 800 + 100)::INTEGER; 
-END$$;
+$$;
 
 -- Return un office_type random entre A et J
 CREATE OR REPLACE FUNCTION random_office_type(office_type VARCHAR(10))
@@ -125,59 +114,52 @@ AS $$
 DECLARE
     space_type CHAR(1)[] := ARRAY['<', '>',  '^', 'v', 'x', '_'];
 BEGIN
-
-	if (office_type = 'office') THEN
+	IF (office_type = 'office') THEN
     	RETURN CHR(floor(random() * 9 + 65)::INTEGER);
 	ELSE 
 		RETURN space_type[floor(random() * array_length(space_type, 1))::INTEGER + 1];
 	END IF; 
-
 END$$;
 
 -- Return un office_number random entre 10 et 89
 CREATE OR REPLACE FUNCTION random_office_number()
 	RETURNS INTEGER
-LANGUAGE PLPGSQL
+LANGUAGE SQL
 AS $$
-BEGIN
     RETURN floor(random() * 80 + 10)::INTEGER; 
-END$$;
+$$;
 
 -- Return un shelf_height random entre 0 et 25
 CREATE OR REPLACE FUNCTION random_shelf_height()
 	RETURNS INTEGER
-LANGUAGE PLPGSQL
+LANGUAGE SQL
 AS $$
-BEGIN
     RETURN floor(random() * 26)::INTEGER; 
-END$$;
+$$;
 
 -- Return un office_type random entre A et T
 CREATE OR REPLACE FUNCTION random_storage_cabinet()
 	RETURNS INTEGER
-LANGUAGE PLPGSQL
+LANGUAGE SQL
 AS $$
-BEGIN
     RETURN floor(random() * 20)::INTEGER; 
-END$$;
+$$;
 
 -- Return un shelf_height random entre 0 et 99
 CREATE OR REPLACE FUNCTION random_storage_bin()
 	RETURNS INTEGER
-LANGUAGE PLPGSQL
+LANGUAGE SQL
 AS $$
-BEGIN
     RETURN floor(random() * 100)::INTEGER; 
-END$$;
+$$;
 
 -- Return vrai ou faux
 CREATE OR REPLACE FUNCTION random_probation()
 	RETURNS BOOLEAN
-LANGUAGE PLPGSQL
+LANGUAGE SQL
 AS $$
-BEGIN
     RETURN random() < 0.75; 
-END$$;
+$$;
 
 
 /*FONCTION DE GENERATION*/
@@ -250,14 +232,14 @@ BEGIN
 	RETURN office_localisation_tag;
 END$$;
 
-CREATE OR REPLACE FUNCTION get_office_localisation_tag()
 
+
+CREATE OR REPLACE FUNCTION get_office_localisation_tag()
 	RETURNS CHAR(18)
-LANGUAGE PLPGSQL
+LANGUAGE SQL
 AS $$
-BEGIN
 	RETURN 'GZ 000.WHI-100.A10';
-END$$;
+$$;
 
 
 
@@ -283,7 +265,6 @@ BEGIN
 		RAISE EXCEPTION 'Mauvais storage_cabinet';
 	END IF;
 	storage_localisation_tag := storage_localisation_tag || CHR(storage_cabinet + 64);
-	
 	
 	IF shelf_height < 0 OR shelf_height > 25 THEN
 		RAISE EXCEPTION 'Mauvais shelf_height';
@@ -311,13 +292,11 @@ END$$;
 
 
 CREATE OR REPLACE FUNCTION get_storage_localisation_tag()
-
 	RETURNS CHAR(20)
-LANGUAGE PLPGSQL
+LANGUAGE SQL
 AS $$
-BEGIN
 	RETURN 'XB 000.MAG-600.^IZ00';
-END$$;
+$$;
 
 
 
