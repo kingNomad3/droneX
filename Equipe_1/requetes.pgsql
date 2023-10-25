@@ -76,3 +76,18 @@ DATE 21-10-2023
 	 FROM drone
  ORDER BY domain_operationnel ASC, model ASC, date_disponibilite ASC;
 
+
+/* REQUETE 5
+DATE 25-10-2023
+	QUESTION : 
+				
+
+			Pour chaque employé, on désire connaitre le nombre de fois qu'il.elle a accepté.e positivement
+			et négativement la transition d'un état à un autre (on considère toutes les transitions). On désire
+			cette présentation :
+					o prénom											employee
+					o nom de famille									employee
+					o le nombre de transitions acceptées				
+					o le nombre de transitions rejetées
+					o le ratio de transitions rejetées				
+*/
