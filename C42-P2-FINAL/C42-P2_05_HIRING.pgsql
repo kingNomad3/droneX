@@ -102,20 +102,18 @@ END$$;
 -- Return un floor level random entre -5 et 25
 CREATE OR REPLACE FUNCTION random_floor_level()
 	RETURNS INTEGER
-LANGUAGE PLPGSQL
+LANGUAGE SQL
 AS $$
-BEGIN
     RETURN floor(random() * 31 - 5)::INTEGER; 
-END$$;
+	$$;
 
 -- Return un room_number random entre 100 et 899
 CREATE OR REPLACE FUNCTION random_room_number()
 	RETURNS INTEGER
-LANGUAGE PLPGSQL
+LANGUAGE SQL
 AS $$
-BEGIN
     RETURN floor(random() * 800 + 100)::INTEGER; 
-END$$;
+$$;
 
 -- Return un office_type random entre A et J
 CREATE OR REPLACE FUNCTION random_office_type(office_type VARCHAR(10))
@@ -137,47 +135,42 @@ END$$;
 -- Return un office_number random entre 10 et 89
 CREATE OR REPLACE FUNCTION random_office_number()
 	RETURNS INTEGER
-LANGUAGE PLPGSQL
+LANGUAGE SQL
 AS $$
-BEGIN
     RETURN floor(random() * 80 + 10)::INTEGER; 
-END$$;
+$$;
 
 -- Return un shelf_height random entre 0 et 25
 CREATE OR REPLACE FUNCTION random_shelf_height()
 	RETURNS INTEGER
-LANGUAGE PLPGSQL
+LANGUAGE SQL
 AS $$
-BEGIN
     RETURN floor(random() * 26)::INTEGER; 
-END$$;
+$$;
 
 -- Return un office_type random entre A et T
 CREATE OR REPLACE FUNCTION random_storage_cabinet()
 	RETURNS INTEGER
-LANGUAGE PLPGSQL
+LANGUAGE SQL
 AS $$
-BEGIN
     RETURN floor(random() * 20)::INTEGER; 
-END$$;
+$$;
 
 -- Return un shelf_height random entre 0 et 99
 CREATE OR REPLACE FUNCTION random_storage_bin()
 	RETURNS INTEGER
-LANGUAGE PLPGSQL
+LANGUAGE SQL
 AS $$
-BEGIN
     RETURN floor(random() * 100)::INTEGER; 
-END$$;
+$$;
 
 -- Return vrai ou faux
 CREATE OR REPLACE FUNCTION random_probation()
 	RETURNS BOOLEAN
-LANGUAGE PLPGSQL
+LANGUAGE SQL
 AS $$
-BEGIN
     RETURN random() < 0.75; 
-END$$;
+$$;
 
 
 /*FONCTION DE GENERATION*/
@@ -251,13 +244,11 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION get_office_localisation_tag()
-
 	RETURNS CHAR(18)
-LANGUAGE PLPGSQL
+LANGUAGE SQL
 AS $$
-BEGIN
 	RETURN 'GZ 000.WHI-100.A10';
-END$$;
+$$;
 
 
 
@@ -311,13 +302,11 @@ END$$;
 
 
 CREATE OR REPLACE FUNCTION get_storage_localisation_tag()
-
 	RETURNS CHAR(20)
-LANGUAGE PLPGSQL
+LANGUAGE SQL
 AS $$
-BEGIN
 	RETURN 'XB 000.MAG-600.^IZ00';
-END$$;
+$$;
 
 
 

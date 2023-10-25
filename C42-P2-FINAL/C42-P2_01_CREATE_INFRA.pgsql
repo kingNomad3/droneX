@@ -146,7 +146,7 @@ CREATE TABLE drone_state (
 	state 					CHAR(1)   				NOT NULL,
 	employee 				INTEGER 				NOT NULL,
 	start_date_time 		TIMESTAMP 				NOT NULL,
-	location 				CHAR(19) 				DEFAULT 'XB 000.MAG-600.AZ00',
+	location 				CHAR(20) 				DEFAULT 'XB 000.MAG-600.^IZ00',
 
 	CONSTRAINT pk_drone_state PRIMARY KEY (id),
 	CONSTRAINT uc_sta_dro_dro_start_date UNIQUE(drone, start_date_time)
