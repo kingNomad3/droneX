@@ -49,7 +49,7 @@ CREATE OR REPLACE FUNCTION drone_tag_d ()
 RETURNS CHAR(6) LANGUAGE PLPGSQL
 AS 
 $$
-	DECLARE current_count INT := 1000 + (SELECT COUNT(*)-1 FROM drone) * 10;
+	DECLARE current_count INT := 1000 + (SELECT COUNT(*) FROM drone) * 10;
 	BEGIN
 		RETURN TRANSLATE(LPAD(current_count::CHAR(6), 6, '0'), '0123456789', 'ZUDTQCSPHN');
 	END
@@ -68,56 +68,78 @@ $$
 
 	BEGIN
 
-		IF $1 NOT IN (SELECT name FROM drone_model) 
+		IF model_name NOT IN (SELECT name FROM drone_model) 
 		   THEN RAISE EXCEPTION 'Le modèle % n''existe pas', model_name;
 		END IF;
 
 		manufacturer_name := (
 			SELECT name 
 			  FROM manufacturing_company 
-			 WHERE id = (SELECT manufacturer FROM drone_model WHERE name = $1)
+			 WHERE id = (SELECT manufacturer FROM drone_model WHERE name = model_name)
 		);
 
-		RETURN drone_tag_a(manufacturer_name) || drone_tag_b($1) || '-' || drone_tag_c($2) || '-' || drone_tag_d();
+		RETURN drone_tag_a(manufacturer_name) || drone_tag_b(model_name) || '-' || drone_tag_c(drone_acquisition) || '-' || drone_tag_d();
 	END
 $$;
 
 
--- DROP PROCEDURE add_drone_acquisition;
+
+SELECT * FROM drone;
+-- * FROM drone_state;
+-- * FROM state_note;
+CALL add_drone_acquisition(
+	'Matrice 350 RTK', 'kfj06546ww3', '222222222', NOW()::TIMESTAMP, '111111111', NOW()::date, '333333333');
+---------------------------
 CREATE OR REPLACE PROCEDURE add_drone_acquisition(
-model_name drone_model.name%TYPE,
-serial_drone drone.serial_number%TYPE, --DRONE TAG(drone.drone_tag%TYPE) OU DRONE SERIAL NUMBER (drone.serial_number%TYPE)
-registering_employee employee.ssn%TYPE, 
-registering_timestamp drone_state.start_date_time%TYPE, 
-receiving_employee employee.ssn%TYPE, 
-receiving_date drone.acquisition_date%TYPE, 
-unpacking_employee employee.ssn%TYPE)
+    model_name              drone_model.name%TYPE,
+    serial_drone            drone.serial_number%TYPE,
+    registering_employee    employee.ssn%TYPE, 
+    registering_timestamp   drone_state.start_date_time%TYPE, 
+    receiving_employee      employee.ssn%TYPE, 
+    receiving_date          drone.acquisition_date%TYPE, 
+    unpacking_employee      employee.ssn%TYPE)
 LANGUAGE PLPGSQL 
 AS 
 $$
 DECLARE drone_initial_state CHAR(1) := 'I';
-		note_type_initial note_type := 'general_observation';
+		note_type_initial note_type := 'general_observation'::note_type;
+        drone_id drone.id%TYPE := null;
 		
 BEGIN
+
+
 --1er partie fonctionnelle, mais non-testée
 	INSERT INTO drone (model, serial_number, drone_tag, acquisition_date) 
-		VALUES ((SELECT id FROM drone_model WHERE name = model_name), serial_drone, generate_drone_tag(model_name, receiving_date), receiving_date);
-	
+		VALUES (
+            (SELECT id FROM drone_model WHERE name = model_name), 
+            serial_drone, 
+            generate_drone_tag(model_name, receiving_date), 
+            receiving_date);
+
+	SELECT id INTO drone_id FROM drone WHERE serial_number = serial_drone;
+
 --2 partie
 	INSERT INTO drone_state (drone, state, employee, start_date_time, location)
-		VALUES ((SELECT id FROM drone WHERE serial_number = serial_drone), drone_initial_state, (SELECT id FROM employee WHERE ssn = registering_employee), registering_timestamp, simulate_storage_localisation_tag()); -- à disctuer en équipe ce qu'on fait par rapport au state en fonction des triggers de drone_state
+		VALUES (
+            drone_id, 
+            drone_initial_state, 
+            (SELECT id FROM employee WHERE ssn = registering_employee), 
+            registering_timestamp, 
+            simulate_storage_localisation_tag()); -- à disctuer en équipe ce qu'on fait par rapport au state en fonction des triggers de drone_state
 
 --3e partie
 	INSERT INTO state_note (drone_state, note, date_time, employee, details)
 		VALUES (
-			(SELECT id FROM drone_state WHERE drone = (SELECT id FROM drone WHERE serial_number = serial_drone)), 
+			(SELECT id FROM drone_state WHERE drone = drone_id), 
 			note_type_initial,
 			registering_timestamp, 
 			(SELECT id FROM employee WHERE ssn = receiving_employee),
-			'Received by : ' || (SELECT first_name || ' ' || last_name FROM employee WHERE ssn = receiving_employee) || ' on ' || receiving_date || E'\n' || ' Unpacked by : ' || (SELECT first_name || ' ' || last_name FROM employee WHERE ssn = unpacking_employee));
+			'Received by : ' || concat_name(receiving_employee) || ' on ' || receiving_date || 
+			E'\nUnpacked by : ' || concat_name(unpacking_employee));
 
 END
 $$;
 
--- CALL add_drone_acquisition(
--- 	'Matrice 350 RTK', 'kfj0563www3', '222222222', NOW()::TIMESTAMP, '142754032', NOW()::date, '134132158');
+CREATE OR REPLACE FUNCTION concat_name(ssn_employe employee.ssn%TYPE) RETURNS VARCHAR LANGUAGE SQL AS $$
+    SELECT first_name || ' ' || last_name FROM employee WHERE ssn = ssn_employe;
+$$
