@@ -104,7 +104,7 @@ CREATE OR REPLACE FUNCTION random_floor_level()
 	RETURNS INTEGER
 LANGUAGE SQL
 AS $$
-    RETURN floor(random() * 31 - 5)::INTEGER; 
+    SELECT floor(random() * 31 - 5)::INTEGER; 
 $$;
 
 -- Return un room_number random entre 100 et 899
@@ -112,7 +112,7 @@ CREATE OR REPLACE FUNCTION random_room_number()
 	RETURNS INTEGER
 LANGUAGE SQL
 AS $$
-    RETURN floor(random() * 800 + 100)::INTEGER; 
+    SELECT floor(random() * 800 + 100)::INTEGER; 
 $$;
 
 -- Return un office_type random entre A et J
@@ -137,7 +137,7 @@ CREATE OR REPLACE FUNCTION random_office_number()
 	RETURNS INTEGER
 LANGUAGE SQL
 AS $$
-    RETURN floor(random() * 80 + 10)::INTEGER; 
+    SELECT floor(random() * 80 + 10)::INTEGER; 
 $$;
 
 -- Return un shelf_height random entre 0 et 25
@@ -145,7 +145,7 @@ CREATE OR REPLACE FUNCTION random_shelf_height()
 	RETURNS INTEGER
 LANGUAGE SQL
 AS $$
-    RETURN floor(random() * 26)::INTEGER; 
+    SELECT floor(random() * 26)::INTEGER; 
 $$;
 
 -- Return un office_type random entre A et T
@@ -153,7 +153,7 @@ CREATE OR REPLACE FUNCTION random_storage_cabinet()
 	RETURNS INTEGER
 LANGUAGE SQL
 AS $$
-    RETURN floor(random() * 20)::INTEGER; 
+    SELECT floor(random() * 20)::INTEGER; 
 $$;
 
 -- Return un shelf_height random entre 0 et 99
@@ -161,7 +161,7 @@ CREATE OR REPLACE FUNCTION random_storage_bin()
 	RETURNS INTEGER
 LANGUAGE SQL
 AS $$
-    RETURN floor(random() * 100)::INTEGER; 
+    SELECT floor(random() * 100)::INTEGER; 
 $$;
 
 -- Return vrai ou faux
@@ -169,7 +169,7 @@ CREATE OR REPLACE FUNCTION random_probation()
 	RETURNS BOOLEAN
 LANGUAGE SQL
 AS $$
-    RETURN random() < 0.75; 
+    SELECT random() < 0.75; 
 $$;
 
 
