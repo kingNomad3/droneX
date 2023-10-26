@@ -84,11 +84,11 @@ $$;
 
 
 
-SELECT * FROM drone;
+--SELECT * FROM drone;
 -- * FROM drone_state;
 -- * FROM state_note;
-CALL add_drone_acquisition(
-	'Matrice 350 RTK', 'kfj06546ww3', '222222222', NOW()::TIMESTAMP, '111111111', NOW()::date, '333333333');
+--CALL add_drone_acquisition(
+--	'Matrice 350 RTK', 'kfj06546ww3', '222222222', NOW()::TIMESTAMP, '111111111', NOW()::date, '333333333');
 ---------------------------
 CREATE OR REPLACE PROCEDURE add_drone_acquisition(
     model_name              drone_model.name%TYPE,
@@ -99,7 +99,7 @@ CREATE OR REPLACE PROCEDURE add_drone_acquisition(
     receiving_date          drone.acquisition_date%TYPE, 
     unpacking_employee      employee.ssn%TYPE)
 LANGUAGE PLPGSQL 
-AS 
+AS
 $$
 DECLARE drone_initial_state CHAR(1) := 'I';
 		note_type_initial note_type := 'general_observation'::note_type;
@@ -140,6 +140,64 @@ BEGIN
 END
 $$;
 
+-- concatenation du prenom et nom de famille
 CREATE OR REPLACE FUNCTION concat_name(ssn_employe employee.ssn%TYPE) RETURNS VARCHAR LANGUAGE SQL AS $$
     SELECT first_name || ' ' || last_name FROM employee WHERE ssn = ssn_employe;
+$$;
+
+-- Simulations # 1
+CREATE OR REPLACE PROCEDURE simulate_drone_acquisition(
+	model_name drone_model.name%TYPE,
+	registering_employee employee.ssn%TYPE,
+	registering_timestamp drone_state.start_date_time%TYPE
+) LANGUAGE PLPGSQL AS 
 $$
+BEGIN
+
+CALL add_drone_acquisition(
+	model_name, 
+	generate_random_serial(), 
+	registering_employee, 
+	registering_timestamp, 
+	registering_employee, 
+	(registering_timestamp - ('1 HOUR'::INTERVAL))::date,
+	registering_employee);
+
+END
+$$;
+
+-- utilitaires de JC mais légèrement modifiés (random_char a une string par défaut différente)
+CREATE OR REPLACE FUNCTION random_integer(min INT, max INT) 
+    RETURNS INT
+LANGUAGE SQL
+AS $$
+    SELECT floor(random() * (max - min + 1) + min)::INT;
+$$;
+
+CREATE OR REPLACE FUNCTION random_char(input_chars text DEFAULT 'ABCDEFGHIJ0123456789-:.') 
+    RETURNS TEXT 
+LANGUAGE SQL
+AS $$
+    SELECT substring(input_chars FROM random_integer(1, length(input_chars)) FOR 1);
+$$;
+
+
+-- Génère un numéro de série
+CREATE OR REPLACE FUNCTION generate_random_serial() RETURNS drone.serial_number%type LANGUAGE PLPGSQL AS $$
+DECLARE
+	output_chars text := '';
+	n INTEGER := FLOOR(random() * 6)::INT + 6; -- de 6 à 12 caractères
+BEGIN
+	output_chars := output_chars || random_char('ABCDEFGHIJ'); -- Lettre comme premier
+	FOR i IN 1..n-1 LOOP
+	output_chars := output_chars || random_char(); -- random selon le default de random_char
+	END LOOP;
+	output_chars := output_chars || random_char('0123456789'); -- numérique pour finir
+
+	IF output_chars NOT IN (SELECT serial_number FROM drone) THEN RETURN output_chars; -- si ce serial existe, on recommence
+	ELSE RETURN generate_random_serial();
+	END IF;
+END
+$$;
+
+CALL simulate_drone_acquisition('Matrice 350 RTK', '222222222', NOW()::TIMESTAMP); -- pourrait être une coquille,
