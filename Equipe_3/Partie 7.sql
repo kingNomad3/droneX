@@ -33,7 +33,7 @@ SELECT insert_note(1, 'problematic_observation', NOW()::TIMESTAMP, 1, 'qwewqeqeq
 SELECT insert_note(1, 'problematic_observation', NOW()::TIMESTAMP, 1, 'qwewqeqeqeqewqewqewqeqeqweqweqweqwe');
 SELECT insert_note(1, 'problematic_observation', NOW()::TIMESTAMP, 1, 'qwewqeqeqeqewqewqewqeqeqweqweqweqwe');
 																	  
-SELECT * from drone_state
+SELECT * from drone_state;
 
 SELECT * FROM state_note;
 /**********************************************************************/
@@ -89,7 +89,7 @@ END
 $$ LANGUAGE PLPGSQL;
 
 -- TEST :
--- SELECT get_next_accepted_state('I')
+-- SELECT get_next_accepted_state('D')
 /**********************************************************************/
 
 /****************************** Récupérer le prochain next_rejected_state *******************/
@@ -108,7 +108,7 @@ END
 $$ LANGUAGE PLPGSQL;
 
 -- TEST :
--- SELECT get_next_rejected_state('I')
+-- SELECT get_next_rejected_state('D')
 /**********************************************************************/
 
 
@@ -127,7 +127,8 @@ BEGIN
 				  LIMIT 1);		  
 	RETURN old_state;
 END
-$$ LANGUAGE PLPGSQL;																	  
+$$ LANGUAGE PLPGSQL;
+-- SELECT get_most_recent_insert_state(1)
 /************************************************************/
 
 /****************************** Récupérer l'id de l'insert le plus recent avec drone *******************/
@@ -145,7 +146,8 @@ BEGIN
 				  LIMIT 1);		  
 	RETURN old_id;
 END
-$$ LANGUAGE PLPGSQL;	
+$$ LANGUAGE PLPGSQL;
+-- SELECT get_most_recent_insert_id()
 /**********************************************************************/
 
 
@@ -234,7 +236,7 @@ BEGIN
   	-- Fonction insert dans state_note
   		NEW.start_date_time := NOW()::TIMESTAMP;
 		RAISE NOTICE 'BONNE INSERTION DANS DRONE_STATE !!!';
-		SELECT insert_note(1, 'problematic_observation', NOW()::TIMESTAMP, 1, 'qwewqeqeqeqewqewqewqeqeqweqweqweqwe');
+			PERFORM insert_note(1, 'problematic_observation', NOW()::TIMESTAMP, 1, 'qwewqeqeqeqewqewqewqeqeqweqweqweqwe');
     	RETURN NEW;
   	ELSE
     	RAISE EXCEPTION 'Insert validation failed';
