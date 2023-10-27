@@ -218,8 +218,6 @@ IF random_value <= 0.25 THEN unp_emp := rec_emp;
 ELSE unp_emp := reg_emp;
 END IF;
 
-RAISE NOTICE 'model: % serial: %', model, serial;
-
 CALL add_drone_acquisition(
 	model,
 	serial,
@@ -241,3 +239,27 @@ $$;
 
 
 -- Troisième simulation
+
+CREATE OR REPLACE PROCEDURE simulate_drone_acquisition(
+	n INTEGER, 
+	from_timestamp TIMESTAMP, 
+	to_timestamp TIMESTAMP) 
+LANGUAGE PLPGSQL 
+AS $$
+DECLARE time_interval INTERVAL;
+BEGIN
+IF n >= 1 THEN 
+--generer timestamp entre les deux
+	time_interval := (to_timestamp - from_timestamp)/n;
+	FOR i IN 0..n-1 LOOP
+		CALL simulate_drone_acquisition(to_timestamp + (time_interval * n));
+	END LOOP;
+ELSE RAISE EXCEPTION 'Le paramètre n (%) doit être strictement positif (>0)', n;
+END IF;
+END	
+$$;
+
+--SELECT COUNT(*) FROM DRONE;
+
+CALL simulate_drone_acquisition(41, NOW()::TIMESTAMP, NOW()::TIMESTAMP + '5 MONTH'::INTERVAL);
+
