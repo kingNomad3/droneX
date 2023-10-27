@@ -201,3 +201,65 @@ END
 $$;
 
 CALL simulate_drone_acquisition('Matrice 350 RTK', '222222222', NOW()::TIMESTAMP); -- pourrait être une coquille,
+
+-- 2ieme simulation
+CREATE OR REPLACE PROCEDURE simulate_drone_acquisition(ref_timestamp drone_state.start_date_time%TYPE)
+LANGUAGE PLPGSQL AS $$
+DECLARE 
+		random_value DOUBLE PRECISION := random();
+        reg_emp employee.ssn%TYPE := get_random_employee();
+        rec_emp employee.ssn%TYPE := get_random_employee();
+		unp_emp employee.ssn%TYPE;
+		
+		model VARCHAR := get_random_model();
+		serial VARCHAR := generate_random_serial();
+BEGIN
+IF random_value <= 0.25 THEN unp_emp := rec_emp;
+ELSE unp_emp := reg_emp;
+END IF;
+
+CALL add_drone_acquisition(
+	model,
+	serial,
+	reg_emp,
+	ref_timestamp,
+	rec_emp,
+	(ref_timestamp - '1 DAY'::INTERVAL)::DATE,
+	unp_emp);
+END
+$$;
+
+CREATE OR REPLACE FUNCTION get_random_model() RETURNS drone_model.name%TYPE LANGUAGE SQL AS $$
+	SELECT name FROM drone_model ORDER BY random() LIMIT 1;
+$$;
+
+CREATE OR REPLACE FUNCTION get_random_employee () RETURNS employee.ssn%TYPE LANGUAGE SQL AS $$
+	SELECT ssn FROM employee ORDER BY random() LIMIT 1;
+$$;
+
+
+-- Troisième simulation
+
+CREATE OR REPLACE PROCEDURE simulate_drone_acquisition(
+	n INTEGER, 
+	from_timestamp TIMESTAMP, 
+	to_timestamp TIMESTAMP) 
+LANGUAGE PLPGSQL 
+AS $$
+DECLARE time_interval INTERVAL;
+BEGIN
+IF n >= 1 THEN 
+--generer timestamp entre les deux
+	time_interval := (to_timestamp - from_timestamp)/n;
+	FOR i IN 0..n-1 LOOP
+		CALL simulate_drone_acquisition(to_timestamp + (time_interval * n));
+	END LOOP;
+ELSE RAISE EXCEPTION 'Le paramètre n (%) doit être strictement positif (>0)', n;
+END IF;
+END	
+$$;
+
+--SELECT COUNT(*) FROM DRONE;
+
+CALL simulate_drone_acquisition(100, NOW()::TIMESTAMP, NOW()::TIMESTAMP + '5 MONTH'::INTERVAL);
+SELECT COUNT(*) FROM DRONE_STATE WHERE location<>'XB 000.MAG-600.^IZ00'
