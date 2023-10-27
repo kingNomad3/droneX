@@ -153,7 +153,7 @@ CREATE OR REPLACE FUNCTION random_storage_cabinet()
 	RETURNS INTEGER
 LANGUAGE SQL
 AS $$
-    SELECT floor(random() * 20)::INTEGER; 
+    SELECT floor(random() * 20)::INTEGER + 1; 
 $$;
 
 -- Return un shelf_height random entre 0 et 99
