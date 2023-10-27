@@ -30,7 +30,8 @@ INSERT INTO drone_state(drone, state, employee, location) VALUES (1, 'D', 1,'das
 INSERT INTO drone_state(drone, state, employee, location) VALUES (1, 'L', 1,'dasda');
 
 SELECT insert_note(1, 'problematic_observation', NOW()::TIMESTAMP, 1, 'qwewqeqeqeqewqewqewqeqeqweqweqweqwe');
-SELECT insert_note(2, 'problematic_observation', NOW()::TIMESTAMP, 1, 'qwewqeqeqeqewqewqewqeqeqweqweqweqwe');
+SELECT insert_note(1, 'problematic_observation', NOW()::TIMESTAMP, 1, 'qwewqeqeqeqewqewqewqeqeqweqweqweqwe');
+SELECT insert_note(1, 'problematic_observation', NOW()::TIMESTAMP, 1, 'qwewqeqeqeqewqewqewqeqeqweqweqweqwe');
 																	  
 SELECT * from drone_state
 
@@ -51,18 +52,16 @@ $$ LANGUAGE PLPGSQL;
 /*******************************************************************************/
 
 /************************************ Récupérer la note du old state *************************/
---DROP FUNCTION get_note_from_state(state_param CHAR(1));
+--DROP FUNCTION get_note_from_state(drone_id_param INTEGER);
 
-CREATE OR REPLACE FUNCTION get_note_from_state(state_param CHAR(1))
+CREATE OR REPLACE FUNCTION get_note_from_state(drone_id_param INTEGER)
 RETURNS note_type
 AS $$
 DECLARE
-	old_state_id1 INTEGER;
 	note_return note_type;
 BEGIN
-	old_state_id1 := (SELECT id FROM drone_state WHERE state = state_param);
 	
-	note_return := (SELECT note FROM state_note WHERE id = old_state_id1);
+	note_return := (SELECT note FROM state_note WHERE drone_state = drone_id_param ORDER BY date_time DESC LIMIT 1);
 	
 	RAISE NOTICE '%', note_return;
 	
@@ -71,7 +70,7 @@ RETURN note_return;
 
 END;
 $$ LANGUAGE PLPGSQL;
---SELECT get_note_from_state('T');
+--SELECT get_note_from_state(1);
 
 
 /****************************** Récupérer le prochain next_accepted_state *******************/
@@ -113,7 +112,7 @@ $$ LANGUAGE PLPGSQL;
 /**********************************************************************/
 
 
-/****************************** Récupérer l'insert le plus recent avec drone *******************/
+/****************************** Récupérer le state de l'insert le plus recent avec drone *******************/
 --DROP FUNCTION IF EXISTS get_most_recent_insert_state(drone_param INTEGER);
 CREATE OR REPLACE FUNCTION get_most_recent_insert_state(drone_param INTEGER) 
 RETURNS CHAR(1)
@@ -123,7 +122,7 @@ DECLARE
 BEGIN
 	old_state := (SELECT state
 			  	  FROM drone_state
-			      WHERE drone = 1
+			      WHERE drone = drone_param
 				  ORDER BY start_date_time DESC
 				  LIMIT 1);		  
 	RETURN old_state;
@@ -131,7 +130,23 @@ END
 $$ LANGUAGE PLPGSQL;																	  
 /************************************************************/
 
-
+/****************************** Récupérer l'id de l'insert le plus recent avec drone *******************/
+-- DROP FUNCTION IF EXISTS get_most_recent_insert_id(drone_param INTEGER)
+CREATE OR REPLACE FUNCTION get_most_recent_insert_id(drone_param INTEGER) 
+RETURNS INTEGER
+AS $$
+DECLARE 
+	old_id INTEGER;
+BEGIN
+	old_id := (SELECT id
+			  	  FROM drone_state
+			      WHERE drone = drone_param
+				  ORDER BY start_date_time DESC
+				  LIMIT 1);		  
+	RETURN old_id;
+END
+$$ LANGUAGE PLPGSQL;	
+/**********************************************************************/
 
 
 
@@ -155,6 +170,8 @@ DECLARE
 	old_state_next_accepted_state CHAR(1);
 	old_state_next_rejected_state CHAR(1);
 	
+	old_state_note note_type;
+	
 	-- AIDE MEMOIRE
 	
 	validate_r_a_state BOOLEAN;
@@ -170,20 +187,24 @@ BEGIN
 	employee := NEW.employee;
 	
 	IF NEW.location IS NOT NULL THEN
-		location = NEW.location;
+		location := NEW.location;
 	END IF;
 	
 	validate_r_a_state := false;
 	validate_note_old_state := false;
 	
 	
- -- 2. fonction qui verifie si le state est bon ou mauvais
--- verifier si le n-a-s de l'du plus recent insert est le state du l'insert en cours
-																
 	
+	
+ -- 2. fonction qui verifie si le state est bon ou mauvais en fonct du na_state et nr_state
+																
 	old_state := (SELECT get_most_recent_insert_state(drone));
 	old_state_next_accepted_state := (SELECT get_next_accepted_state(old_state));
 	old_state_next_rejected_state := (SELECT get_next_rejected_state(old_state));
+	
+	old_state_note := (SELECT get_note_from_state(drone));
+	
+-- 					SELECT get_note_from_state(get_most_recent_insert_id(1)
 																				  
 	IF state = old_state_next_accepted_state OR state = old_state_next_rejected_state THEN
  		validate_r_a_state := true;
@@ -191,19 +212,33 @@ BEGIN
 		RAISE NOTICE 'MAUVAISE INSERTION LE STATE DOIT EGAL a % ou a %', old_state_next_accepted_state, old_state_next_rejected_state;
 	END IF;
 	
-	IF 
- 
+ -- 3. fonction qui verifie si la note associe a l'ancien state est la bonne
  
 	
+	
+	IF old_state_note = 'problematic_observation'::note_type THEN
+		validate_note_old_state = true;	
+		RAISE NOTICE 'test';
+	ELSE 
+		RAISE NOTICE 'la note ne correspond pas';
+	END IF;
+			
+	
+	
+	IF validate_r_a_state = true AND validate_note_old_state = true THEN
+		insert_correct = true;
+	END IF;
  
+
   	IF insert_correct THEN
   	-- Fonction insert dans state_note
   		NEW.start_date_time := NOW()::TIMESTAMP;
-		RAISE NOTICE 'BONNE INSERTION DANS DRONE_STATE !!!'; 
+		RAISE NOTICE 'BONNE INSERTION DANS DRONE_STATE !!!';
+		SELECT insert_note(1, 'problematic_observation', NOW()::TIMESTAMP, 1, 'qwewqeqeqeqewqewqewqeqeqweqweqweqwe');
     	RETURN NEW;
   	ELSE
     	RAISE EXCEPTION 'Insert validation failed';
-  END IF;
+  	END IF;
 END;
 $$;
 /************************************************************/
