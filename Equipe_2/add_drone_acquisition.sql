@@ -201,3 +201,43 @@ END
 $$;
 
 CALL simulate_drone_acquisition('Matrice 350 RTK', '222222222', NOW()::TIMESTAMP); -- pourrait être une coquille,
+
+-- 2ieme simulation
+CREATE OR REPLACE PROCEDURE simulate_drone_acquisition(ref_timestamp drone_state.start_date_time%TYPE)
+LANGUAGE PLPGSQL AS $$
+DECLARE 
+		random_value DOUBLE PRECISION := random();
+        reg_emp employee.ssn%TYPE := get_random_employee();
+        rec_emp employee.ssn%TYPE := get_random_employee();
+		unp_emp employee.ssn%TYPE;
+		
+		model VARCHAR := get_random_model();
+		serial VARCHAR := generate_random_serial();
+BEGIN
+IF random_value <= 0.25 THEN unp_emp := rec_emp;
+ELSE unp_emp := reg_emp;
+END IF;
+
+RAISE NOTICE 'model: % serial: %', model, serial;
+
+CALL add_drone_acquisition(
+	model,
+	serial,
+	reg_emp,
+	ref_timestamp,
+	rec_emp,
+	(ref_timestamp - '1 DAY'::INTERVAL)::DATE,
+	unp_emp);
+END
+$$;
+
+CREATE OR REPLACE FUNCTION get_random_model() RETURNS drone_model.name%TYPE LANGUAGE SQL AS $$
+	SELECT name FROM drone_model ORDER BY random() LIMIT 1;
+$$;
+
+CREATE OR REPLACE FUNCTION get_random_employee () RETURNS employee.ssn%TYPE LANGUAGE SQL AS $$
+	SELECT ssn FROM employee ORDER BY random() LIMIT 1;
+$$;
+
+
+-- Troisième simulation
