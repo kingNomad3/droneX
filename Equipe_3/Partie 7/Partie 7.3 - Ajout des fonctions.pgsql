@@ -138,6 +138,7 @@ DECLARE
 	
 	validate_r_a_state BOOLEAN;
 	validate_note_old_state BOOLEAN;
+	validate_horodatage BOOLEAN;
 	
 
 BEGIN
@@ -154,6 +155,7 @@ BEGIN
 	
 	validate_r_a_state := false;
 	validate_note_old_state := false;
+	validate_horodatage := false;
 	
 	
 	
@@ -175,13 +177,13 @@ BEGIN
 	END IF;
 	
  -- 3. fonction qui verifie si la note associe a l'ancien state est la bonne
+ 
  	
-	IF state = old_state_next_accepted_state THEN
+	IF state = old_state_next_accepted_state AND state = 'R' THEN -- i.e si NEW.state = i ou t 
 		IF old_state_note = 'problematic_observation'::note_type 
 		OR old_state_note = 'maintenance_performed'::note_type 
 		OR old_state_note = 'repair_completed'::note_type THEN
 			validate_note_old_state = true;	
-			RAISE NOTICE 'test';
 		END IF;
 	END IF;
 	
@@ -189,14 +191,23 @@ BEGIN
 		validate_note_old_state = true;	
 	END IF;
 	
-	IF validate_r_a_state = true AND validate_note_old_state = true THEN
+	-- 4.  partie qui verifie si le temps en insertion est plus petit que le temps actuel
+	
+	IF NEW.start_date_time < NOW()::TIMESTAMP THEN
+		validate_horodatage = true;
+	END IF;
+	
+	RAISE NOTICE '%', validate_horodatage;
+		
+	
+	IF validate_r_a_state = true AND validate_note_old_state = true AND validate_horodatage = true THEN
 		insert_correct = true;
 	END IF;
  
 
   	IF insert_correct THEN
   	-- Fonction insert dans state_note
-  		NEW.start_date_time := NOW()::TIMESTAMP;
+  		--NEW.start_date_time := NOW()::TIMESTAMP;
 		RAISE NOTICE 'BONNE INSERTION DANS DRONE_STATE !!!';
 			PERFORM insert_note(1, 'problematic_observation', NOW()::TIMESTAMP, 1, 'qwewqeqeqeqewqewqewqeqeqweqweqweqwe');
     	RETURN NEW;
@@ -216,3 +227,7 @@ ON drone_state
 FOR EACH ROW
 EXECUTE FUNCTION validate_insert_drone_state();
 /**********************************************************************/
+
+
+
+
