@@ -247,7 +247,7 @@ CREATE OR REPLACE FUNCTION get_office_localisation_tag()
 	RETURNS CHAR(18)
 LANGUAGE SQL
 AS $$
-	RETURN 'GZ 000.WHI-100.A10';
+	SELECT 'GZ 000.WHI-100.A10';
 $$;
 
 
@@ -305,7 +305,7 @@ CREATE OR REPLACE FUNCTION get_storage_localisation_tag()
 	RETURNS CHAR(20)
 LANGUAGE SQL
 AS $$
-	RETURN 'XB 000.MAG-600.^IZ00';
+	SELECT 'XB 000.MAG-600.^IZ00';
 $$;
 
 
@@ -407,3 +407,5 @@ CALL simulate_hiring('Éric', 'Labonté');
 CALL simulate_hiring('Jean-Marc', 'Deschamps');
 CALL simulate_hiring('Francis', 'Beauchemin-Côté');
 CALL simulate_hiring('Michelle', 'Girard');
+
+SELECT simulate_storage_localisation_tag()
