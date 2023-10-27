@@ -26,8 +26,8 @@ INSERT INTO drone_state(drone, state, employee, start_date_time, location) VALUE
 INSERT INTO drone_state(drone, state, employee, start_date_time, location) VALUES (1, 'P', 1,'2000-07-01', 'dasda');
 
 -- Le insert pour tester les fonctions (s'assurer que les fonctions et le trigger sont créés avant de rouler)
-INSERT INTO drone_state(drone, state, employee, location) VALUES (1, 'D', 1,'dasda');
-INSERT INTO drone_state(drone, state, employee, location) VALUES (1, 'L', 1,'dasda');
+INSERT INTO drone_state(drone, state, employee, location) VALUES (1, 'I', 1,'dasda');
+INSERT INTO drone_state(drone, state, employee, location) VALUES (1, 'R', 1,'dasda');
 
 SELECT insert_note(1, 'problematic_observation', NOW()::TIMESTAMP, 1, 'qwewqeqeqeqewqewqewqeqeqweqweqweqwe');
 SELECT insert_note(1, 'problematic_observation', NOW()::TIMESTAMP, 1, 'qwewqeqeqeqewqewqewqeqeqweqweqweqwe');
@@ -215,12 +215,27 @@ BEGIN
 	END IF;
 	
  -- 3. fonction qui verifie si la note associe a l'ancien state est la bonne
+ 	
+	IF state = old_state_next_accepted_state THEN
+		IF old_state_note = 'problematic_observation'::note_type 
+		OR old_state_note = 'maintenance_performed'::note_type 
+		OR old_state_note = 'repair_completed'::note_type THEN
+			validate_note_old_state = true;	
+			RAISE NOTICE 'test';
+		END IF;
+	END IF;
+	
+	IF state = old_state_next_rejected_state AND old_state_note = 'problematic_observation'::note_type THEN
+		validate_note_old_state = true;	
+	END IF;
+ 
+ 
+ 
+ 
  
 	
-	
 	IF old_state_note = 'problematic_observation'::note_type THEN
-		validate_note_old_state = true;	
-		RAISE NOTICE 'test';
+		
 	ELSE 
 		RAISE NOTICE 'la note ne correspond pas';
 	END IF;
