@@ -261,5 +261,5 @@ $$;
 
 --SELECT COUNT(*) FROM DRONE;
 
-CALL simulate_drone_acquisition(41, NOW()::TIMESTAMP, NOW()::TIMESTAMP + '5 MONTH'::INTERVAL);
-
+CALL simulate_drone_acquisition(100, NOW()::TIMESTAMP, NOW()::TIMESTAMP + '5 MONTH'::INTERVAL);
+SELECT COUNT(*) FROM DRONE_STATE WHERE location<>'XB 000.MAG-600.^IZ00'
