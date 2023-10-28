@@ -1,62 +1,88 @@
--- fait la partie A du drone_tag
+DROP PROCEDURE IF EXISTS simulate_drone_acquisition(INTEGER, TIMESTAMP, TIMESTAMP);
+DROP FUNCTION IF EXISTS get_random_employee;
+DROP FUNCTION IF EXISTS get_random_model;
+
+DROP PROCEDURE IF EXISTS simulate_drone_acquisition(drone_state.start_date_time%TYPE);
+DROP FUNCTION IF EXISTS generate_random_serial;
+DROP FUNCTION IF EXISTS random_char;
+DROP FUNCTION IF EXISTS random_integer;
+DROP PROCEDURE IF EXISTS simulate_drone_acquisition(
+	drone_model.name%TYPE,
+	employee.ssn%TYPE,
+	drone_state.start_date_time%TYPE);
+DROP FUNCTION IF EXISTS concat_name;
+DROP PROCEDURE IF EXISTS add_drone_acquisition(
+    drone_model.name%TYPE,
+    drone.serial_number%TYPE,
+    employee.ssn%TYPE, 
+    drone_state.start_date_time%TYPE, 
+    employee.ssn%TYPE, 
+    drone.acquisition_date%TYPE, 
+    employee.ssn%TYPE);
+DROP FUNCTION IF EXISTS generate_drone_tag;
+DROP FUNCTION IF EXISTS drone_tag_d;
+DROP FUNCTION IF EXISTS drone_tag_c;
+DROP FUNCTION IF EXISTS drone_tag_b;
+DROP FUNCTION IF EXISTS drone_tag_a;
+
+-- Fonction utilitaire (partie A du drone_tag)
 CREATE OR REPLACE FUNCTION drone_tag_a (manufacturer_name manufacturing_company.name%TYPE) 
 RETURNS CHAR(3) LANGUAGE PLPGSQL 
 AS $$
-	BEGIN
-		manufacturer_name := UPPER(REGEXP_REPLACE(manufacturer_name, '[^a-zA-Z]', '', 'g'));
-		RETURN RPAD(SUBSTR(manufacturer_name, 1, 3), 3, 'x');
-	END
+BEGIN
+	manufacturer_name := UPPER(REGEXP_REPLACE(manufacturer_name, '[^a-zA-Z]', '', 'g'));
+	RETURN RPAD(SUBSTR(manufacturer_name, 1, 3), 3, 'x');
+END
 $$;
 
 
--- fait la partie B du drone_tag
+-- Fonction utilitaire (partie B du drone_tag)
 CREATE OR REPLACE FUNCTION drone_tag_b (model_name drone_model.name%TYPE) 
 RETURNS CHAR(3) LANGUAGE PLPGSQL
 AS 
 $$
-	DECLARE
-			trimmed VARCHAR := UPPER(REPLACE(model_name, ' ', ''));
-			len INT := LENGTH(trimmed);
-			bias INT := (len % 2 = 1)::int;
-			first CHAR := SUBSTR(trimmed, 1, 1);
-			last CHAR := SUBSTR(trimmed, len, 1);
+DECLARE
+		trimmed VARCHAR := UPPER(REPLACE(model_name, ' ', ''));
+		len INT := LENGTH(trimmed);
+		bias INT := (len % 2 = 1)::int;
+		first CHAR := SUBSTR(trimmed, 1, 1);
+		last CHAR := SUBSTR(trimmed, len, 1);
 
-	BEGIN
-		IF len=1 
-			THEN RETURN CONCAT('x', trimmed, 'x');
-		ELSIF len=2 
-			THEN RETURN CONCAT(first, 'x', last);
-		ELSE 
-			RETURN CONCAT(first, SUBSTR(trimmed, len/2 + bias, 1), last);
-		END IF;
-	END
+BEGIN
+	IF len=1 
+		THEN RETURN CONCAT('x', trimmed, 'x');
+	ELSIF len=2 
+		THEN RETURN CONCAT(first, 'x', last);
+	ELSE 
+		RETURN CONCAT(first, SUBSTR(trimmed, len/2 + bias, 1), last);
+	END IF;
+END
 $$;
 
 
--- fait la partie C du drone_tag
+-- Fonction utilitaire (partie C du drone_tag)
 CREATE OR REPLACE FUNCTION drone_tag_c (acquisition_date drone.acquisition_date%TYPE) 
 RETURNS CHAR(6) LANGUAGE PLPGSQL
 AS 
 $$
-	DECLARE date_reference DATE := '2000-01-01'::date;
-	BEGIN
-		RETURN LPAD((acquisition_date - date_reference)::VARCHAR, 6, '0');
-	END
+DECLARE date_reference DATE := '2000-01-01'::date;
+BEGIN
+	RETURN LPAD((acquisition_date - date_reference)::VARCHAR, 6, '0');
+END
 $$;
 
--- fait la partie D du drone_tag
+-- Fonction utilitaire (partie D du drone_tag)
 CREATE OR REPLACE FUNCTION drone_tag_d () 
 RETURNS CHAR(6) LANGUAGE PLPGSQL
 AS 
 $$
-	DECLARE current_count INT := 1000 + (SELECT COUNT(*) FROM drone) * 10;
-	BEGIN
-		RETURN TRANSLATE(LPAD(current_count::CHAR(6), 6, '0'), '0123456789', 'ZUDTQCSPHN');
-	END
+DECLARE current_count INT := 1000 + (SELECT COUNT(*) FROM drone) * 10;
+BEGIN
+	RETURN TRANSLATE(LPAD(current_count::CHAR(6), 6, '0'), '0123456789', 'ZUDTQCSPHN');
+END
 $$;
 
 
--- version finale (nécessite les fonctions ci-haut)
 CREATE OR REPLACE FUNCTION generate_drone_tag (
 		model_name drone_model.name%TYPE, 
 		drone_acquisition drone.acquisition_date%TYPE
@@ -64,32 +90,24 @@ CREATE OR REPLACE FUNCTION generate_drone_tag (
 RETURNS drone.drone_tag%TYPE LANGUAGE PLPGSQL
 AS 
 $$
-	DECLARE manufacturer_name manufacturing_company.name%TYPE;
+DECLARE manufacturer_name manufacturing_company.name%TYPE;
 
-	BEGIN
+BEGIN
+	IF model_name NOT IN (SELECT name FROM drone_model) 
+	   THEN RAISE EXCEPTION 'Le modèle % n''existe pas', model_name;
+	END IF;
 
-		IF model_name NOT IN (SELECT name FROM drone_model) 
-		   THEN RAISE EXCEPTION 'Le modèle % n''existe pas', model_name;
-		END IF;
-
-		manufacturer_name := (
-			SELECT name 
-			  FROM manufacturing_company 
-			 WHERE id = (SELECT manufacturer FROM drone_model WHERE name = model_name)
-		);
-
-		RETURN drone_tag_a(manufacturer_name) || drone_tag_b(model_name) || '-' || drone_tag_c(drone_acquisition) || '-' || drone_tag_d();
-	END
+	manufacturer_name := (
+		SELECT name 
+		  FROM manufacturing_company 
+		 WHERE id = (SELECT manufacturer FROM drone_model WHERE name = model_name)
+	);
+	RETURN drone_tag_a(manufacturer_name) || drone_tag_b(model_name) || '-' || drone_tag_c(drone_acquisition) || '-' || drone_tag_d();
+END
 $$;
 
 
 
---SELECT * FROM drone;
--- * FROM drone_state;
--- * FROM state_note;
---CALL add_drone_acquisition(
---	'Matrice 350 RTK', 'kfj06546ww3', '222222222', NOW()::TIMESTAMP, '111111111', NOW()::date, '333333333');
----------------------------
 CREATE OR REPLACE PROCEDURE add_drone_acquisition(
     model_name              drone_model.name%TYPE,
     serial_drone            drone.serial_number%TYPE,
@@ -106,9 +124,6 @@ DECLARE drone_initial_state CHAR(1) := 'I';
         drone_id drone.id%TYPE := null;
 		
 BEGIN
-
-
---1er partie fonctionnelle, mais non-testée
 	INSERT INTO drone (model, serial_number, drone_tag, acquisition_date) 
 		VALUES (
             (SELECT id FROM drone_model WHERE name = model_name), 
@@ -118,7 +133,6 @@ BEGIN
 
 	SELECT id INTO drone_id FROM drone WHERE serial_number = serial_drone;
 
---2 partie
 	INSERT INTO drone_state (drone, state, employee, start_date_time, location)
 		VALUES (
             drone_id, 
@@ -127,7 +141,6 @@ BEGIN
             registering_timestamp, 
             simulate_storage_localisation_tag()); -- à disctuer en équipe ce qu'on fait par rapport au state en fonction des triggers de drone_state
 
---3e partie
 	INSERT INTO state_note (drone_state, note, date_time, employee, details)
 		VALUES (
 			(SELECT id FROM drone_state WHERE drone = drone_id), 
@@ -141,7 +154,9 @@ END
 $$;
 
 -- concatenation du prenom et nom de famille
-CREATE OR REPLACE FUNCTION concat_name(ssn_employe employee.ssn%TYPE) RETURNS VARCHAR LANGUAGE SQL AS $$
+CREATE OR REPLACE FUNCTION concat_name(ssn_employe employee.ssn%TYPE) 
+RETURNS VARCHAR LANGUAGE SQL 
+AS $$
     SELECT first_name || ' ' || last_name FROM employee WHERE ssn = ssn_employe;
 $$;
 
@@ -152,21 +167,20 @@ CREATE OR REPLACE PROCEDURE simulate_drone_acquisition(
 	registering_timestamp drone_state.start_date_time%TYPE
 ) LANGUAGE PLPGSQL AS 
 $$
-BEGIN
-
+DECLARE set_interval INTERVAL := '1 HOUR'::INTERVAL; 
+BEGIN 
 CALL add_drone_acquisition(
 	model_name, 
 	generate_random_serial(), 
 	registering_employee, 
 	registering_timestamp, 
 	registering_employee, 
-	(registering_timestamp - ('1 HOUR'::INTERVAL))::date,
+	(registering_timestamp - set_interval)::date,
 	registering_employee);
 
 END
 $$;
 
--- utilitaires de JC mais légèrement modifiés (random_char a une string par défaut différente)
 CREATE OR REPLACE FUNCTION random_integer(min INT, max INT) 
     RETURNS INT
 LANGUAGE SQL
@@ -200,7 +214,7 @@ BEGIN
 END
 $$;
 
-CALL simulate_drone_acquisition('Matrice 350 RTK', '222222222', NOW()::TIMESTAMP); -- pourrait être une coquille,
+--CALL simulate_drone_acquisition('Matrice 350 RTK', '222222222', NOW()::TIMESTAMP); -- pourrait être une coquille,
 
 -- 2ieme simulation
 CREATE OR REPLACE PROCEDURE simulate_drone_acquisition(ref_timestamp drone_state.start_date_time%TYPE)
@@ -248,18 +262,22 @@ LANGUAGE PLPGSQL
 AS $$
 DECLARE time_interval INTERVAL;
 BEGIN
-IF n >= 1 THEN 
---generer timestamp entre les deux
-	time_interval := (to_timestamp - from_timestamp)/n;
-	FOR i IN 0..n-1 LOOP
-		CALL simulate_drone_acquisition(to_timestamp + (time_interval * n));
+	IF n < 1 
+	    THEN 
+	    RAISE EXCEPTION 'Le paramètre n (%) doit être strictement positif (>0)', n;
+	ELSIF to_timestamp < from_timestamp 
+	    THEN
+	    RAISE EXCEPTION 'Le temps de début (%) doit être antérieur au temps d''arrivée (%)', from_timestamp, to_timestamp;
+	END IF;
+
+	time_interval := (to_timestamp - from_timestamp) / n;
+	FOR i IN 0..n-1 
+	    LOOP
+		CALL simulate_drone_acquisition(from_timestamp + (time_interval * i));
 	END LOOP;
-ELSE RAISE EXCEPTION 'Le paramètre n (%) doit être strictement positif (>0)', n;
-END IF;
-END	
+END
 $$;
 
 --SELECT COUNT(*) FROM DRONE;
-
-CALL simulate_drone_acquisition(100, NOW()::TIMESTAMP, NOW()::TIMESTAMP + '5 MONTH'::INTERVAL);
-SELECT COUNT(*) FROM DRONE_STATE WHERE location<>'XB 000.MAG-600.^IZ00'
+--SELECT * FROM DRONE_STATE
+--CALL simulate_drone_acquisition(1, NOW()::TIMESTAMP, NOW()::TIMESTAMP + '1 MONTH'::INTERVAL);
