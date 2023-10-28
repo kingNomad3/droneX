@@ -13,30 +13,6 @@
 	C42-P2_05_HIRING.pgsql
 	V1.0
 */
-/*
-
-SELECT get_office_localisation_tag('GZ', 12, 'WHI', 122, 'a', 12);
-SELECT get_storage_localisation_tag('GZ', 12, 'WHI', 120, '<', 12, 0, 1);
-CALL hire('1232131', 'Jilen', 'Test', FALSE, get_office_localisation_tag('GZ', 12, 'WHI', 122, 'a', 12));
-CALL hire('123123', 'Remi', 'Test', TRUE);
-SELECT simulate_storage_localisation_tag();
-CALL simulate_hiring('Remi', 'Chuet', '121212121212');
-CALL simulate_hiring('Julien', 'Bob', '12231212121212');CALL simulate_hiring('Remi', 'Chuet', '1212121212123453');
-CALL simulate_hiring('Julien', 'Bob', '1212312121277');CALL simulate_hiring('Remi', 'Chuet', '1212121212113451');
-CALL simulate_hiring('Julien', 'Bob', '1212132121266');CALL simulate_hiring('Remi', 'Chuet', '121212121213451111');
-CALL simulate_hiring('Julien', 'Bob', '123145545562323');CALL simulate_hiring('Remi', 'Chuet', '12121234121222');
-CALL simulate_hiring('Julien', 'Bob', '121212121245444');CALL simulate_hiring('Remi', 'Chuet', '121245121212333');
-CALL simulate_hiring('Julien', 'Bob', '12121212451288');
-SELECT * from employee 	
-
-
--- QUESTION
--- Confirmer validation d'intrant
--- 	RETURN 'GZ 000.WHI-100.A10'; ?
--- 	default table ? meme si procedure a un default
-
-
-*/
 
 DROP PROCEDURE IF EXISTS simulate_hiring(last_name_value employee.last_name%TYPE,first_name_value employee.first_name%TYPE,ssn_value employee.ssn%TYPE);
 DROP FUNCTION IF EXISTS simulate_storage_localisation_tag();
@@ -333,7 +309,7 @@ BEGIN
 END$$;
 
 
-
+-- Simulation 1
 CREATE OR REPLACE FUNCTION simulate_office_localisation_tag()
 	RETURNS CHAR(18)
 LANGUAGE PLPGSQL
@@ -353,6 +329,7 @@ BEGIN
 END$$;
 
 
+-- Simulation 2
 CREATE OR REPLACE FUNCTION simulate_storage_localisation_tag()
 	RETURNS CHAR(20)
 LANGUAGE PLPGSQL
@@ -374,7 +351,7 @@ BEGIN
 END$$;
 
 
-
+-- Simulation 3
 CREATE OR REPLACE PROCEDURE simulate_hiring(last_name_value employee.last_name%TYPE,
 											 first_name_value employee.first_name%TYPE,
 											 ssn_value employee.ssn%TYPE DEFAULT NULL)
@@ -408,4 +385,3 @@ CALL simulate_hiring('Jean-Marc', 'Deschamps');
 CALL simulate_hiring('Francis', 'Beauchemin-Côté');
 CALL simulate_hiring('Michelle', 'Girard');
 
-SELECT simulate_storage_localisation_tag()

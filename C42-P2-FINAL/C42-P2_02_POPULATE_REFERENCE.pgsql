@@ -15,8 +15,6 @@
 */
 
 
-
-
 PREPARE ins_unit(VARCHAR(16),VARCHAR(64), VARCHAR(1024)) AS 
     INSERT INTO unit(symbol, name , description)VALUES ($1,$2,$3);
 
