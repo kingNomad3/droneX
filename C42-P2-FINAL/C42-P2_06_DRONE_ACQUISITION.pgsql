@@ -293,7 +293,7 @@ $$;
 --SELECT * FROM DRONE
 CALL add_drone_acquisition(
 	'Spot',
-    'IFAC.96', -- devrait retourner une erreur
+    'IFAC.96',
     '444444444', 
     NOW()::TIMESTAMP + '10 DAY'::INTERVAL, 
     '333333333', 
