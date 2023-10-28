@@ -160,7 +160,7 @@ AS $$
     SELECT first_name || ' ' || last_name FROM employee WHERE ssn = ssn_employe;
 $$;
 
--- Simulations # 1
+-- Simulations 1
 CREATE OR REPLACE PROCEDURE simulate_drone_acquisition(
 	model_name drone_model.name%TYPE,
 	registering_employee employee.ssn%TYPE,
@@ -214,19 +214,17 @@ BEGIN
 END
 $$;
 
---CALL simulate_drone_acquisition('Matrice 350 RTK', '222222222', NOW()::TIMESTAMP); -- pourrait être une coquille,
-
--- 2ieme simulation
+-- Simulation 2
 CREATE OR REPLACE PROCEDURE simulate_drone_acquisition(ref_timestamp drone_state.start_date_time%TYPE)
 LANGUAGE PLPGSQL AS $$
 DECLARE 
-		random_value DOUBLE PRECISION := random();
-        reg_emp employee.ssn%TYPE := get_random_employee();
-        rec_emp employee.ssn%TYPE := get_random_employee();
-		unp_emp employee.ssn%TYPE;
-		
-		model VARCHAR := get_random_model();
-		serial VARCHAR := generate_random_serial();
+	random_value DOUBLE PRECISION := random();
+	reg_emp employee.ssn%TYPE := get_random_employee();
+	rec_emp employee.ssn%TYPE := get_random_employee();
+	unp_emp employee.ssn%TYPE;
+
+	model VARCHAR := get_random_model();
+	serial VARCHAR := generate_random_serial();
 BEGIN
 IF random_value <= 0.25 THEN unp_emp := rec_emp;
 ELSE unp_emp := reg_emp;
@@ -252,8 +250,7 @@ CREATE OR REPLACE FUNCTION get_random_employee () RETURNS employee.ssn%TYPE LANG
 $$;
 
 
--- Troisième simulation
-
+-- Simulation 3
 CREATE OR REPLACE PROCEDURE simulate_drone_acquisition(
 	n INTEGER, 
 	from_timestamp TIMESTAMP, 
@@ -280,4 +277,6 @@ $$;
 
 --SELECT COUNT(*) FROM DRONE;
 --SELECT * FROM DRONE_STATE
---CALL simulate_drone_acquisition(1, NOW()::TIMESTAMP, NOW()::TIMESTAMP + '1 MONTH'::INTERVAL);
+CALL simulate_drone_acquisition(NOW()::TIMESTAMP);
+CALL simulate_drone_acquisition(75, NOW()::TIMESTAMP, NOW()::TIMESTAMP + '12 MONTH'::INTERVAL);
+
