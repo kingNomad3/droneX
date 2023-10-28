@@ -275,8 +275,17 @@ BEGIN
 END
 $$;
 
---SELECT COUNT(*) FROM DRONE;
---SELECT * FROM DRONE_STATE
+--SELECT * FROM employee;
+--SELECT * FROM DRONE
+CALL add_drone_acquisition(
+	'Spot',
+    'IFAC.96', -- devrait retourner une erreur
+    '444444444', 
+    NOW()::TIMESTAMP + '10 DAY'::INTERVAL, 
+    '333333333', 
+    (NOW() - '1 DAY'::INTERVAL)::DATE, 
+    '555555555');
+	
+CALL simulate_drone_acquisition('Lilium Jet', '333333333', NOW()::TIMESTAMP + '3 DAY'::INTERVAL);
 CALL simulate_drone_acquisition(NOW()::TIMESTAMP);
-CALL simulate_drone_acquisition(75, NOW()::TIMESTAMP, NOW()::TIMESTAMP + '12 MONTH'::INTERVAL);
-
+CALL simulate_drone_acquisition(98, NOW()::TIMESTAMP, NOW()::TIMESTAMP + '12 MONTH'::INTERVAL);
