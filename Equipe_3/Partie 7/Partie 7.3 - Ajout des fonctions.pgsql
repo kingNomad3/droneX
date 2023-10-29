@@ -192,8 +192,8 @@ BEGIN
  -- 4. partie qui verifie si la note associe a l'ancien state est la bonne
  
  	
-	IF state = old_state_next_accepted_state AND state = 'R' THEN -- i.e si NEW.state = i ou t 
-		IF old_state_note = 'problematic_observation'::note_type 
+	IF state = old_state_next_accepted_state AND old_state = 'R' THEN -- i.e si NEW.state = i
+		IF old_state_note = 'general_observation'::note_type 
 		OR old_state_note = 'maintenance_performed'::note_type 
 		OR old_state_note = 'repair_completed'::note_type THEN
 			validate_note_old_state = true;	
@@ -205,7 +205,7 @@ BEGIN
 	END IF;
 		
 	
-	IF state = old_state_next_rejected_state AND old_state_note = 'problematic_observation'::note_type THEN
+	IF state = old_state_next_rejected_state AND old_state_note = 'general_observation'::note_type THEN
 		validate_note_old_state = true;	
 	END IF;
 	
@@ -214,8 +214,7 @@ BEGIN
 	IF NEW.start_date_time > (SELECT start_date_time FROM drone_state WHERE drone_state.drone = NEW.drone ORDER BY start_date_time DESC LIMIT 1) THEN
 		validate_horodatage = true;
 	END IF;
-	
-	RAISE NOTICE '%', validate_horodatage;
+
 		
 	
 	IF validate_r_a_state = true AND validate_note_old_state = true AND validate_horodatage = true THEN
@@ -230,7 +229,12 @@ BEGIN
   	-- Fonction insert dans state_note en fonction de NEW.state
   		--NEW.start_date_time := NOW()::TIMESTAMP;
 		RAISE NOTICE 'BONNE INSERTION DANS DRONE_STATE !!!';
+		IF state = old_state_next_accepted_state AND old_state = 'R' THEN
+			PERFORM insert_note(drone, 'maintenance_performed', NOW()::TIMESTAMP, 1, 'qwewqeqeqeqewqewqewqeqeqweqweqweqwe');
+		END IF;
+		IF state = old_state_next_rejected_state THEN
 			PERFORM insert_note(1, 'problematic_observation', NOW()::TIMESTAMP, 1, 'qwewqeqeqeqewqewqewqeqeqweqweqweqwe');
+		END IF;
     	RETURN NEW;
   	ELSE
     	RAISE EXCEPTION 'Insert validation failed';
@@ -249,6 +253,6 @@ FOR EACH ROW
 EXECUTE FUNCTION validate_insert_drone_state();
 /**********************************************************************/
 
-
+select * from state_note
 
 
