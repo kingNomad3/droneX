@@ -122,19 +122,21 @@ CREATE OR REPLACE FUNCTION validate_insert_drone_state()
 RETURNS TRIGGER
 LANGUAGE plpgsql AS $$
 DECLARE
-	insert_correct BOOLEAN := false; -- variable qui valide si les conditions sont remplies;
+	
 	drone INTEGER;
 	state CHAR(1);
 	employee INTEGER;
-	location CHAR(19) DEFAULT 'XB 000.MAG-600.AZ00';
-																				   
+	location CHAR(20) DEFAULT 'XB 000.MAG-600.^IZ00';
+	
+	
+	insert_correct BOOLEAN := false; -- variable qui valide si les conditions sont remplies;
 	old_state CHAR(1);																			   
 	old_state_next_accepted_state CHAR(1);
 	old_state_next_rejected_state CHAR(1);
 	
 	old_state_note note_type;
 	
-	-- AIDE MEMOIRE
+	old_state_number_insertion INTEGER;
 	
 	validate_r_a_state BOOLEAN;
 	validate_note_old_state BOOLEAN;
@@ -157,18 +159,29 @@ BEGIN
 	validate_note_old_state := false;
 	validate_horodatage := false;
 	
+	old_state_number_insertion = (SELECT COUNT(*) FROM drone_state WHERE drone_state.drone = NEW.drone);
 	
 	
 	
- -- 2. fonction qui verifie si le state est bon ou mauvais en fonct du na_state et nr_state
+	
+-- 2. fonction qui valide si c'est le premier insert dans drone_state pour le drone_id
+-- 	IF old_state_number_insertion = 0 THEN
+-- 		IF NEW.start_date_time < NOW()::TIMESTAMP THEN
+-- 			NEW.state = 'I';
+-- 			RETURN NEW;
+-- 		END IF;	
+-- 	END IF;
+		
+		
+	
+	
+ -- 3. fonction qui verifie si le state est bon ou mauvais en fonct du na_state et nr_state
 																
 	old_state := (SELECT get_most_recent_insert_state(drone));
 	old_state_next_accepted_state := (SELECT get_next_accepted_state(old_state));
 	old_state_next_rejected_state := (SELECT get_next_rejected_state(old_state));
 	
 	old_state_note := (SELECT get_note_from_state(drone)); 
-	
--- 					SELECT get_note_from_state(get_most_recent_insert_id(1)
 																				  
 	IF state = old_state_next_accepted_state OR state = old_state_next_rejected_state THEN
  		validate_r_a_state := true;
@@ -176,7 +189,7 @@ BEGIN
 		RAISE NOTICE 'MAUVAISE INSERTION LE STATE DOIT EGAL a % ou a %', old_state_next_accepted_state, old_state_next_rejected_state;
 	END IF;
 	
- -- 3. fonction qui verifie si la note associe a l'ancien state est la bonne
+ -- 4. partie qui verifie si la note associe a l'ancien state est la bonne
  
  	
 	IF state = old_state_next_accepted_state AND state = 'R' THEN -- i.e si NEW.state = i ou t 
@@ -187,13 +200,18 @@ BEGIN
 		END IF;
 	END IF;
 	
+	IF state = old_state_next_accepted_state THEN
+		validate_note_old_state = true;
+	END IF;
+		
+	
 	IF state = old_state_next_rejected_state AND old_state_note = 'problematic_observation'::note_type THEN
 		validate_note_old_state = true;	
 	END IF;
 	
 	-- 4.  partie qui verifie si le temps en insertion est plus petit que le temps actuel
 	
-	IF NEW.start_date_time < NOW()::TIMESTAMP THEN
+	IF NEW.start_date_time > (SELECT start_date_time FROM drone_state WHERE drone_state.drone = NEW.drone ORDER BY start_date_time DESC LIMIT 1) THEN
 		validate_horodatage = true;
 	END IF;
 	
@@ -203,10 +221,13 @@ BEGIN
 	IF validate_r_a_state = true AND validate_note_old_state = true AND validate_horodatage = true THEN
 		insert_correct = true;
 	END IF;
+	
+	
+-- 5. partie de la fonction qui vérifie si toute les conditions d'insertion sont remplies
  
 
   	IF insert_correct THEN
-  	-- Fonction insert dans state_note
+  	-- Fonction insert dans state_note en fonction de NEW.state
   		--NEW.start_date_time := NOW()::TIMESTAMP;
 		RAISE NOTICE 'BONNE INSERTION DANS DRONE_STATE !!!';
 			PERFORM insert_note(1, 'problematic_observation', NOW()::TIMESTAMP, 1, 'qwewqeqeqeqewqewqewqeqeqweqweqweqwe');

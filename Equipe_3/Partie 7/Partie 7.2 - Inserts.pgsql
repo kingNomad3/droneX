@@ -15,8 +15,14 @@ BEGIN;
 COMMIT;
 
 INSERT INTO manufacturing_company(name , web_site)VALUES ('site 1', 'desc');
-INSERT INTO drone_model(name, manufacturer, description, web_site) VALUES ('machine', 1, 'blab baffsfsfsfsfl', 'dad' );
+INSERT INTO drone_model(name, manufacturer, description, web_site) VALUES ('machine1', 1, 'blab baffsfsfsfsfl', 'dad1' );
+INSERT INTO drone_model(name, manufacturer, description, web_site) VALUES ('machine2', 1, 'blab baffsfsfsfsfl', 'dad2' );
+INSERT INTO drone_model(name, manufacturer, description, web_site) VALUES ('machine3', 1, 'blab baffsfsfsfsfl', 'dad3' );
+
+
 INSERT INTO drone(model, serial_number, drone_tag, acquisition_date) VALUES (1, 'premier dans liste', 'tag premier', '1999-01-01');
+INSERT INTO drone(model, serial_number, drone_tag, acquisition_date) VALUES (2, 'deuxieme dans liste', 'tag deuxieme', '1999-01-01');
+INSERT INTO drone(model, serial_number, drone_tag, acquisition_date) VALUES (3, 'troisieme dans liste', 'tag troisieme', '1999-01-01');
 INSERT INTO employee VALUES(1,'dddddd', 'dsdsds', 'rrrrr', 'probation', 'dasdasda');
 
 
