@@ -62,7 +62,7 @@ SHOW client_encoding;
 \! cls
 \echo PHASE 7 - Simule les activités de l''entreprise, gestion des états
 \echo ------------------------------------------------------------------------------
-\i 'C42-P2_07_POPULATE_DRONE_MODELS.pgsql'
+\i 'C42-P2_07_DRONE_ACTIVITIES.pgsql'
 \echo
 \echo
 \! cls
