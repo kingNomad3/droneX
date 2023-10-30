@@ -1,5 +1,14 @@
+DROP TRIGGER IF EXISTS validate_insert_drone_state ON drone_state;	
+DROP FUNCTION IF EXISTS validate_insert_drone_state();
+DROP FUNCTION IF EXISTS get_most_recent_insert_id(drone_param INTEGER);
+DROP FUNCTION IF EXISTS get_most_recent_insert_state(drone_param INTEGER);
+DROP FUNCTION IF EXISTS get_next_rejected_state(symbol_param CHAR(1));	
+DROP FUNCTION IF EXISTS get_next_accepted_state(symbol_param CHAR(1));	
+DROP FUNCTION get_note_from_state(drone_id_param INTEGER);
+DROP FUNCTION IF EXISTS insert_note(drone_state INTEGER, note note_type, date_time TIMESTAMP, employee INTEGER, details VARCHAR(2048));
+
 /****************************** Insert dans la table state_note *******************/
---DROP FUNCTION IF EXISTS insert_note(drone_state INTEGER, note note_type, date_time TIMESTAMP, employee INTEGER, details VARCHAR(2048));
+
 CREATE OR REPLACE FUNCTION insert_note(drone_state INTEGER, note note_type, date_time TIMESTAMP, employee INTEGER, details VARCHAR(2048))
 RETURNS VOID
 AS $$
@@ -12,7 +21,7 @@ $$ LANGUAGE PLPGSQL;
 /*******************************************************************************/
 
 /************************************ Récupérer la note du old state *************************/
---DROP FUNCTION get_note_from_state(drone_id_param INTEGER);
+
 
 CREATE OR REPLACE FUNCTION get_note_from_state(drone_id_param INTEGER)
 RETURNS note_type
@@ -34,7 +43,7 @@ $$ LANGUAGE PLPGSQL;
 
 
 /****************************** Récupérer le prochain next_accepted_state *******************/
---DROP FUNCTION IF EXISTS get_next_accepted_state(symbol_param CHAR(1));																				   
+																			   
 CREATE OR REPLACE FUNCTION get_next_accepted_state(symbol_param CHAR(1)) 
 RETURNS CHAR(1)
 AS $$
@@ -53,7 +62,7 @@ $$ LANGUAGE PLPGSQL;
 /**********************************************************************/
 
 /****************************** Récupérer le prochain next_rejected_state *******************/
---DROP FUNCTION IF EXISTS get_next_rejected_state(symbol_param CHAR(1));																				   
+																			   
 CREATE OR REPLACE FUNCTION get_next_rejected_state(symbol_param CHAR(1)) 
 RETURNS CHAR(1)
 AS $$
@@ -73,7 +82,7 @@ $$ LANGUAGE PLPGSQL;
 
 
 /****************************** Récupérer le state de l'insert le plus recent avec drone *******************/
---DROP FUNCTION IF EXISTS get_most_recent_insert_state(drone_param INTEGER);
+
 CREATE OR REPLACE FUNCTION get_most_recent_insert_state(drone_param INTEGER) 
 RETURNS CHAR(1)
 AS $$
@@ -92,7 +101,7 @@ $$ LANGUAGE PLPGSQL;
 /************************************************************/
 
 /****************************** Récupérer l'id de l'insert le plus recent avec drone *******************/
--- DROP FUNCTION IF EXISTS get_most_recent_insert_id(drone_param INTEGER)
+
 CREATE OR REPLACE FUNCTION get_most_recent_insert_id(drone_param INTEGER) 
 RETURNS INTEGER
 AS $$
@@ -117,7 +126,8 @@ $$ LANGUAGE PLPGSQL;
 
 
 /****************************** Fonction du TRIGGER *******************/
---DROP FUNCTION IF EXISTS validate_insert_drone_state();																				   
+
+
 CREATE OR REPLACE FUNCTION validate_insert_drone_state()
 RETURNS TRIGGER
 LANGUAGE plpgsql AS $$
@@ -142,7 +152,6 @@ DECLARE
 	validate_note_old_state BOOLEAN;
 	validate_horodatage BOOLEAN;
 	
-
 BEGIN
 	
 -- 1. Assignation des variables
@@ -160,20 +169,6 @@ BEGIN
 	validate_horodatage := false;
 	
 	old_state_number_insertion = (SELECT COUNT(*) FROM drone_state WHERE drone_state.drone = NEW.drone);
-	
-	
-	
-	
--- 2. fonction qui valide si c'est le premier insert dans drone_state pour le drone_id
--- 	IF old_state_number_insertion = 0 THEN
--- 		IF NEW.start_date_time < NOW()::TIMESTAMP THEN
--- 			NEW.state = 'I';
--- 			RETURN NEW;
--- 		END IF;	
--- 	END IF;
-		
-		
-	
 	
  -- 3. fonction qui verifie si le state est bon ou mauvais en fonct du na_state et nr_state
 																
@@ -209,13 +204,16 @@ BEGIN
 		validate_note_old_state = true;	
 	END IF;
 	
+	RAISE NOTICE 'state value % : old state : %', state, old_state_next_accepted_state;
+	RAISE NOTICE 'old_state_note value %', validate_note_old_state;
+	
 	-- 4.  partie qui verifie si le temps en insertion est plus petit que le temps actuel
 	
 	IF NEW.start_date_time > (SELECT start_date_time FROM drone_state WHERE drone_state.drone = NEW.drone ORDER BY start_date_time DESC LIMIT 1) THEN
 		validate_horodatage = true;
 	END IF;
-
-		
+	
+	RAISE NOTICE 'horodatage value %', validate_horodatage;
 	
 	IF validate_r_a_state = true AND validate_note_old_state = true AND validate_horodatage = true THEN
 		insert_correct = true;
@@ -230,22 +228,24 @@ BEGIN
   		--NEW.start_date_time := NOW()::TIMESTAMP;
 		RAISE NOTICE 'BONNE INSERTION DANS DRONE_STATE !!!';
 		IF state = old_state_next_accepted_state AND old_state = 'R' THEN
-			PERFORM insert_note(drone, 'maintenance_performed', NOW()::TIMESTAMP, 1, 'qwewqeqeqeqewqewqewqeqeqweqweqweqwe');
+			PERFORM insert_note(drone, 'maintenance_performed', NEW.start_date_time, NEW.employee, concat('Maintenance done by : ', 
+								(SELECT first_name FROM employee WHERE id = New.employee), ' ',(SELECT last_name FROM employee WHERE id = New.employee), ' on ',  NEW.start_date_time::DATE));
 		END IF;
 		IF state = old_state_next_rejected_state THEN
-			PERFORM insert_note(1, 'problematic_observation', NOW()::TIMESTAMP, 1, 'qwewqeqeqeqewqewqewqeqeqweqweqweqwe');
+			PERFORM insert_note(1, 'problematic_observation', NEW.start_date_time, NEW.employee, concat('Problematic observation made by : ', 
+								(SELECT first_name FROM employee WHERE id = NEW.employee), ' ',(SELECT last_name FROM employee WHERE id = NEW.employee), ' on ',  NEW.start_date_time::DATE));
 		END IF;
     	RETURN NEW;
   	ELSE
     	RAISE EXCEPTION 'Insert validation failed';
   	END IF;
-END;
-$$;
+END$$;
 /************************************************************/
   
-
+  
 /****************************** TRIGGER BEFORE INSERT  *****************************/
---DROP TRIGGER IF EXISTS validate_insert_drone_state ON drone_state;																				 
+	
+
 CREATE TRIGGER validate_insert_drone_state
 BEFORE INSERT
 ON drone_state
@@ -253,6 +253,5 @@ FOR EACH ROW
 EXECUTE FUNCTION validate_insert_drone_state();
 /**********************************************************************/
 
-select * from state_note
 
 

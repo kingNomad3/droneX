@@ -371,17 +371,17 @@ END$$;
 
 /*CALL */
 
-CALL simulate_hiring('Rémi', 'Chuet', '111111111');
-CALL simulate_hiring('Julien', 'Coulombe-Morency', '222222222');
-CALL simulate_hiring('Édouard', 'Blain-Noël', '333333333');
-CALL simulate_hiring('Catherine', 'Lavoie', '444444444');
-CALL simulate_hiring('Benjamin', 'Joinvile', '555555555');
-CALL simulate_hiring('François', 'Maltais', '666666666');
+CALL simulate_hiring('Chuet', 'Rémi', '111111111');
+CALL simulate_hiring('Coulombe-Morency', 'Julien', '222222222');
+CALL simulate_hiring('Blain-Noël', 'Édouard','333333333');
+CALL simulate_hiring('Lavoie', 'Catherine','444444444');
+CALL simulate_hiring('Joinvile', 'Benjamin', '555555555');
+CALL simulate_hiring('Maltais', 'François', '666666666');
 
-CALL simulate_hiring('Jean-Christophe', 'Demers');
-CALL simulate_hiring('Frédéric', 'Thériault');
-CALL simulate_hiring('Éric', 'Labonté');
-CALL simulate_hiring('Jean-Marc', 'Deschamps');
-CALL simulate_hiring('Francis', 'Beauchemin-Côté');
-CALL simulate_hiring('Michelle', 'Girard');
+CALL simulate_hiring('Demers','Jean-Christophe' );
+CALL simulate_hiring('Thériault', 'Frédéric');
+CALL simulate_hiring('Labonté', 'Éric');
+CALL simulate_hiring('Deschamps', 'Jean-Marc');
+CALL simulate_hiring('Beauchemin-Côté', 'Francis');
+CALL simulate_hiring('Girard', 'Michelle');
 
