@@ -4,7 +4,7 @@ DROP FUNCTION IF EXISTS get_most_recent_insert_id(drone_param INTEGER);
 DROP FUNCTION IF EXISTS get_most_recent_insert_state(drone_param INTEGER);
 DROP FUNCTION IF EXISTS get_next_rejected_state(symbol_param CHAR(1));	
 DROP FUNCTION IF EXISTS get_next_accepted_state(symbol_param CHAR(1));	
-DROP FUNCTION get_note_from_state(drone_id_param INTEGER);
+DROP FUNCTION IF EXISTS get_note_from_state(drone_id_param INTEGER);
 DROP FUNCTION IF EXISTS insert_note(drone_state INTEGER, note note_type, date_time TIMESTAMP, employee INTEGER, details VARCHAR(2048));
 
 /****************************** Insert dans la table state_note *******************/
@@ -188,7 +188,7 @@ BEGIN
  
  	
 	IF state = old_state_next_accepted_state AND old_state = 'R' THEN -- i.e si NEW.state = i
-		IF old_state_note = 'general_observation'::note_type 
+		IF old_state_note = 'problematic_observation'::note_type 
 		OR old_state_note = 'maintenance_performed'::note_type 
 		OR old_state_note = 'repair_completed'::note_type THEN
 			validate_note_old_state = true;	
@@ -200,8 +200,8 @@ BEGIN
 	END IF;
 		
 	
-	IF state = old_state_next_rejected_state AND old_state_note = 'general_observation'::note_type THEN
-		validate_note_old_state = true;	
+	IF state = old_state_next_rejected_state AND old_state_note = 'problematic_observation'::note_type THEN
+		validate_note_old_state = true;
 	END IF;
 	
 	RAISE NOTICE 'state value % : old state : %', state, old_state_next_accepted_state;
@@ -228,11 +228,11 @@ BEGIN
   		--NEW.start_date_time := NOW()::TIMESTAMP;
 		RAISE NOTICE 'BONNE INSERTION DANS DRONE_STATE !!!';
 		IF state = old_state_next_accepted_state AND old_state = 'R' THEN
-			PERFORM insert_note(drone, 'maintenance_performed', NEW.start_date_time, NEW.employee, concat('Maintenance done by : ', 
+			PERFORM insert_note(NEW.drone, 'maintenance_performed', NEW.start_date_time, NEW.employee, concat('Maintenance done by : ', 
 								(SELECT first_name FROM employee WHERE id = New.employee), ' ',(SELECT last_name FROM employee WHERE id = New.employee), ' on ',  NEW.start_date_time::DATE));
 		END IF;
 		IF state = old_state_next_rejected_state THEN
-			PERFORM insert_note(1, 'problematic_observation', NEW.start_date_time, NEW.employee, concat('Problematic observation made by : ', 
+			PERFORM insert_note(NEW.drone, 'problematic_observation', NEW.start_date_time, NEW.employee, concat('Problematic observation made by : ', 
 								(SELECT first_name FROM employee WHERE id = NEW.employee), ' ',(SELECT last_name FROM employee WHERE id = NEW.employee), ' on ',  NEW.start_date_time::DATE));
 		END IF;
     	RETURN NEW;

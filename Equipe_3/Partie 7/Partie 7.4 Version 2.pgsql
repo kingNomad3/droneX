@@ -67,7 +67,7 @@ CREATE OR REPLACE PROCEDURE simulation_transition_multiple_drone_random()
 AS $$
 DECLARE
 	random_drone_id INTEGER;
-	nombre_insertion INTEGER := 100; -- changer la deuxieme valeur pour modifier le nb de transitions
+	nombre_insertion INTEGER := 1; -- changer la deuxieme valeur pour modifier le nb de transitions
 	random_timestamp TIMESTAMP;
 	i INTEGER;
 	probability BOOLEAN := (SELECT random_event(0.75));
@@ -89,6 +89,7 @@ $$ LANGUAGE plpgsql;
 -- Pour tester la fonction, utiliser le code suivant : 
 --CALL simulation_transition_multiple_drone_random();
 --SELECT * from drone_state;
+-- SELECT * from state_note;
 
 	
 	
