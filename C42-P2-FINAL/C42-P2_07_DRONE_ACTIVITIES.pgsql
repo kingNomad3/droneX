@@ -1,5 +1,4 @@
-
-DROP TRIGGER IF EXISTS prevent_delete_update;
+DROP TRIGGER IF EXISTS prevent_delete_update ON drone_state;
 DROP TRIGGER IF EXISTS validate_insert_drone_state ON drone_state;	
 DROP FUNCTION IF EXISTS validate_insert_drone_state();
 DROP FUNCTION IF EXISTS get_most_recent_insert_id(drone_param INTEGER);
@@ -15,7 +14,8 @@ DROP PROCEDURE IF EXISTS simulation_transition(drone_id INTEGER, date_insertion 
 
 
 -- Partie 7 : Une fonction de simulation simulant une transition pour un drone
-CREATE OR REPLACE PROCEDURE simulation_transition(drone_id INTEGER, date_insertion TIMESTAMP) 
+CREATE OR REPLACE PROCEDURE simulation_transition(drone_id INTEGER, date_insertion TIMESTAMP)
+LANGUAGE PLPGSQL
 AS $$
 DECLARE
 	old_state CHAR(1) := get_most_recent_insert_state(drone_id);
@@ -29,11 +29,11 @@ BEGIN
 	ELSE 
 		INSERT INTO drone_state(drone, state, employee, start_date_time, location) VALUES (drone_id, old_state_n_r_state, random_employe, date_insertion, simulate_storage_localisation_tag());
 	END IF;
-END;
-$$ LANGUAGE PLPGSQL;
+END$$;
 
 -- Partie 7 : Une fonction de simulation simulant n transitions pour un drone
-CREATE OR REPLACE PROCEDURE simulation_transition_multiple(drone_id INTEGER, date_commencement TIMESTAMP, date_fin TIMESTAMP) 
+CREATE OR REPLACE PROCEDURE simulation_transition_multiple(drone_id INTEGER, date_commencement TIMESTAMP, date_fin TIMESTAMP)
+LANGUAGE plpgsql
 AS $$
 DECLARE
 	nombre_insertion INTEGER := random_integer(1, 3); -- changer la deuxieme valeur pour modifier le nb de transitions
@@ -48,8 +48,7 @@ BEGIN
 			PERFORM simulation_transition(drone_id, random_timestamp);
 		END IF;
     END LOOP;
-END;
-$$ LANGUAGE plpgsql;
+END$$; 
 
 
 -- Partie 7 : Une fonction de simulation simulant n transitions pour un drone généré aléatoirement
@@ -180,13 +179,8 @@ BEGIN
 	RETURN old_id;
 END
 $$ LANGUAGE PLPGSQL;
--- SELECT get_most_recent_insert_id()
+
 /**********************************************************************/
-
-
-
-
-
 
 
 /****************************** Fonction du TRIGGER *******************/
