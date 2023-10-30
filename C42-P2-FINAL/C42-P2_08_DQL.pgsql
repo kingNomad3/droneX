@@ -112,7 +112,11 @@ SELECT DISTINCT state.name AS "Status",
 $$;
 
 -- Pour tester cette requête
--- SELECT * FROM requete_dql_3(75);
+-- SELECT name AS "Name", 
+--        status AS "Status", 
+--		  employee_full_name AS "Employee", 
+--		  activities_amount AS "Amount of activities" 
+--     FROM requete_dql_3(75);
 
 -- =======================================================
 --
