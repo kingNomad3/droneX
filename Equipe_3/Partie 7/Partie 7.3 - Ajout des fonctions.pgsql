@@ -186,26 +186,33 @@ BEGIN
 	
  -- 4. partie qui verifie si la note associe a l'ancien state est la bonne
  
- 	
-	IF state = old_state_next_accepted_state AND old_state = 'R' THEN -- i.e si NEW.state = i
-		IF old_state_note = 'problematic_observation'::note_type 
-		OR old_state_note = 'maintenance_performed'::note_type 
-		OR old_state_note = 'repair_completed'::note_type THEN
-			validate_note_old_state = true;	
+ 	IF old_state_number_insertion > 1 THEN
+		IF state = old_state_next_accepted_state AND old_state = 'R' THEN -- i.e si NEW.state = i
+			IF old_state_note = 'problematic_observation'::note_type 
+			OR old_state_note = 'maintenance_performed'::note_type 
+			OR old_state_note = 'repair_completed'::note_type THEN
+				validate_note_old_state = true;	
+			END IF;
 		END IF;
-	END IF;
-	
-	IF state = old_state_next_accepted_state THEN
+
+		IF state = old_state_next_accepted_state THEN
+			validate_note_old_state = true;
+		END IF;
+
+
+		IF state = old_state_next_rejected_state AND old_state_note = 'problematic_observation'::note_type THEN
+			validate_note_old_state = true;
+		END IF;
+
+		RAISE NOTICE 'state value % : old state : %', state, old_state_next_accepted_state;
+		RAISE NOTICE 'old_state_note value %', validate_note_old_state;
+	ELSE 
 		validate_note_old_state = true;
-	END IF;
-		
 	
-	IF state = old_state_next_rejected_state AND old_state_note = 'problematic_observation'::note_type THEN
-		validate_note_old_state = true;
 	END IF;
+ 
+ 	
 	
-	RAISE NOTICE 'state value % : old state : %', state, old_state_next_accepted_state;
-	RAISE NOTICE 'old_state_note value %', validate_note_old_state;
 	
 	-- 4.  partie qui verifie si le temps en insertion est plus petit que le temps actuel
 	
@@ -231,7 +238,7 @@ BEGIN
 			PERFORM insert_note(NEW.drone, 'maintenance_performed', NEW.start_date_time, NEW.employee, concat('Maintenance done by : ', 
 								(SELECT first_name FROM employee WHERE id = New.employee), ' ',(SELECT last_name FROM employee WHERE id = New.employee), ' on ',  NEW.start_date_time::DATE));
 		END IF;
-		IF state = old_state_next_rejected_state THEN
+		IF state = old_state_next_rejected_state OR state = old_state_next_rejected_state THEN
 			PERFORM insert_note(NEW.drone, 'problematic_observation', NEW.start_date_time, NEW.employee, concat('Problematic observation made by : ', 
 								(SELECT first_name FROM employee WHERE id = NEW.employee), ' ',(SELECT last_name FROM employee WHERE id = NEW.employee), ' on ',  NEW.start_date_time::DATE));
 		END IF;
