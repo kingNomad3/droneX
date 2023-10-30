@@ -178,18 +178,16 @@ END$$;
 
 -- La requête:
 SELECT
-    emp.first_name AS prénom,		-- prenom
-    emp.last_name AS nom_de_famille,		-- nom
-    -- FILTER permet de compter le nombre de fois que l'on retourne TRUE ou FALSE
-    COUNT(*) FILTER (WHERE is_accepted_state(drone_state.state, drone_state.drone, drone_state.start_date_time) = TRUE) AS nbr_transitions_acceptées,
-    COUNT(*) FILTER (WHERE is_accepted_state(drone_state.state, drone_state.drone, drone_state.start_date_time) = FALSE) AS nbr_transitions_rejetées,
-
-    COUNT(*) FILTER (WHERE is_accepted_state(drone_state.state, drone_state.drone, drone_state.start_date_time) = FALSE)::NUMERIC /
-    COUNT(*) FILTER (WHERE is_accepted_state(drone_state.state, drone_state.drone, drone_state.start_date_time) = TRUE)::NUMERIC AS ratio_transitions_rejetées 
-    
-    FROM employee AS emp
-    JOIN drone_state ON emp.id = drone_state.drone
-GROUP BY emp.id, emp.first_name, emp.last_name
+    emp.first_name AS "Prénom",
+    emp.last_name AS "Nom de famille",
+    SUM(CASE WHEN is_accepted_state(ds.state, ds.id, ds.start_date_time) THEN 1 ELSE 0 END)::INTEGER AS "Transitions acceptées",
+    SUM(CASE WHEN is_accepted_state(ds.state, ds.id, ds.start_date_time) THEN 0 ELSE 1 END)::INTEGER AS "Transitions rejetées",
+    (SUM(CASE WHEN is_accepted_state(ds.state, ds.id, ds.start_date_time) THEN 0 ELSE 1 END)::INTEGER + 
+    SUM(CASE WHEN is_accepted_state(ds.state, ds.id, ds.start_date_time) THEN 1 ELSE 0 END)::INTEGER)/
+    NULLIF(SUM(CASE WHEN is_accepted_state(ds.state, ds.id, ds.start_date_time) THEN 1 ELSE 0 END), 0)::DOUBLE PRECISION AS "Ratio de transitions rejetées"
+FROM employee AS emp
+JOIN drone_state AS ds ON emp.id = ds.employee
+GROUP BY emp.first_name, emp.last_name
 ORDER BY emp.last_name, emp.first_name;
 
 -- =======================================================
