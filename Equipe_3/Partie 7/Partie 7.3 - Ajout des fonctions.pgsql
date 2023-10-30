@@ -164,6 +164,10 @@ BEGIN
 		location := NEW.location;
 	END IF;
 	
+	IF state IS NULL THEN
+		RETURN NULL;
+	END IF;
+	
 	validate_r_a_state := false;
 	validate_note_old_state := false;
 	validate_horodatage := false;
@@ -195,7 +199,7 @@ BEGIN
 		END IF;
 	END IF;
 	
-	IF state = old_state_next_accepted_state THEN
+	IF state = old_state_next_accepted_state OR state = old_state_next_rejected_state THEN
 		validate_note_old_state = true;
 	END IF;
 		
@@ -225,16 +229,19 @@ BEGIN
 
   	IF insert_correct THEN
   	-- Fonction insert dans state_note en fonction de NEW.state
-  		--NEW.start_date_time := NOW()::TIMESTAMP;
-		RAISE NOTICE 'BONNE INSERTION DANS DRONE_STATE !!!';
+		RAISE NOTICE 'Valid insert';
 		IF state = old_state_next_accepted_state AND old_state = 'R' THEN
 			PERFORM insert_note(NEW.drone, 'maintenance_performed', NEW.start_date_time, NEW.employee, concat('Maintenance done by : ', 
 								(SELECT first_name FROM employee WHERE id = New.employee), ' ',(SELECT last_name FROM employee WHERE id = New.employee), ' on ',  NEW.start_date_time::DATE));
-		END IF;
-		IF state = old_state_next_rejected_state THEN
+		
+		ELSIF state = old_state_next_rejected_state THEN
 			PERFORM insert_note(NEW.drone, 'problematic_observation', NEW.start_date_time, NEW.employee, concat('Problematic observation made by : ', 
 								(SELECT first_name FROM employee WHERE id = NEW.employee), ' ',(SELECT last_name FROM employee WHERE id = NEW.employee), ' on ',  NEW.start_date_time::DATE));
+		ELSE
+			PERFORM insert_note(NEW.drone, 'general_observation', NEW.start_date_time, NEW.employee, concat('State transition approved by : ', 
+								(SELECT first_name FROM employee WHERE id = NEW.employee), ' ',(SELECT last_name FROM employee WHERE id = NEW.employee), ' on ',  NEW.start_date_time::DATE));
 		END IF;
+		
     	RETURN NEW;
   	ELSE
     	RAISE EXCEPTION 'Insert validation failed';
@@ -254,4 +261,4 @@ EXECUTE FUNCTION validate_insert_drone_state();
 /**********************************************************************/
 
 
-
+select * from state_note

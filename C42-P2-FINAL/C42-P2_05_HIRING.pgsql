@@ -375,7 +375,7 @@ CALL simulate_hiring('Chuet', 'Rémi', '111111111');
 CALL simulate_hiring('Coulombe-Morency', 'Julien', '222222222');
 CALL simulate_hiring('Blain-Noël', 'Édouard','333333333');
 CALL simulate_hiring('Lavoie', 'Catherine','444444444');
-CALL simulate_hiring('Joinvile', 'Benjamin', '555555555');
+CALL simulate_hiring('Joinvil', 'Benjamin', '555555555');
 CALL simulate_hiring('Maltais', 'François', '666666666');
 
 CALL simulate_hiring('Demers','Jean-Christophe' );
@@ -385,3 +385,4 @@ CALL simulate_hiring('Deschamps', 'Jean-Marc');
 CALL simulate_hiring('Beauchemin-Côté', 'Francis');
 CALL simulate_hiring('Girard', 'Michelle');
 
+ 
