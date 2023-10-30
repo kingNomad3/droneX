@@ -2,6 +2,29 @@ DROP VIEW IF EXISTS vue_drone_state_drone;
 DROP VIEW IF EXISTS vue_drone_state_state_note; 
 DROP VIEW IF EXISTS vue_drone_disponible;
 
+DROP INDEX IF EXISTS idx_employee_name ON employee; 
+DROP INDEX IF EXISTS idx_employee_name ON employee; 
+DROP INDEX IF EXISTS idx_state_next ON state; 
+DROP INDEX IF EXISTS idx_drone_acquisition ON drone; 
+DROP INDEX IF EXISTS idx_drone_state_date ON drone_state;
+
+CREATE INDEX idx_employee_name
+    ON employee (first_name, last_name);
+	
+CREATE INDEX idx_state_next
+    ON state (next_accepted_state, next_rejected_state);
+	
+CREATE INDEX idx_drone_acquisition
+    ON drone(acquisition_date);
+
+CREATE INDEX idx_drone_state_date
+    ON drone_state(start_date_time);
+	
+
+
+
+
+
 /*
 UTILISATION
 LIAISON :
