@@ -11,29 +11,22 @@
 -- Évaluation : 
 -- 
 --
--- Réalisé par : Julien Coulombe-Morency, Rémi Chuet
+-- Réalisé par : Edouard Blain-Noël, Catherine Lavoie
 -- =======================================================
 
-SELECT (SELECT name 
-          FROM drone_model 
-		 WHERE id = drone.model) AS model,
-
-	   drone_tag, 
-
-	   serial_number, 
-
-	   (SELECT name 
-		  FROM state 
-		 WHERE symbol = (SELECT state 
-		                   FROM drone_state 
-						  WHERE drone = drone.id)) AS etat,
-
-	   (SELECT start_date_time 
-		  FROM drone_state 
-		 WHERE drone = drone.id) AS date_effectif
-
-  FROM drone
- ORDER BY model ASC, acquisition_date DESC, drone_tag ASC;
+SELECT drone_model.name AS "Model", 
+       drone.drone_tag AS "Tag", 
+	   drone.serial_number AS "Serial number", 
+	   state.name AS "Current state", 
+	   drone_state.start_date_time AS "Effective start date"
+  FROM drone  
+  JOIN drone_state
+    ON drone.id = drone_state.drone
+  JOIN drone_model
+    ON drone.model = drone_model.id
+  JOIN state
+    ON drone_state.state = state.symbol
+ORDER BY "Model" ASC, "Effective start date" DESC, "Tag" ASC;
 
 -- =======================================================
 
@@ -95,10 +88,31 @@ SELECT (SELECT name
 --
 -- Réalisé par : Julien Coulombe-Morency, Rémi Chuet
 -- =======================================================
-   SELECT 
+DROP FUNCTION IF EXISTS requete_dql_3;
+CREATE OR REPLACE FUNCTION requete_dql_3 (drone_id drone.id%TYPE) 
+RETURNS TABLE (name TEXT, status TIMESTAMP, employee_full_name TEXT, activities_amount INT)
+LANGUAGE SQL AS $$
+SELECT DISTINCT state.name AS "Status", 
+       sub.start_date_time AS "Start time of status", 
+	   employee.first_name || ' ' || employee.last_name AS "Employee", 
+	   etat.note_amount AS "Number of activities"
+  FROM state_note
+  JOIN
+  (SELECT * FROM drone_state WHERE drone = drone_id) AS "sub"
+  ON state_note.drone_state = sub.id
+  JOIN state
+    ON sub.state = state.symbol
+  JOIN employee
+    ON sub.employee = employee.id
+  JOIN (SELECT drone_state, 
+		       COUNT(*) AS "note_amount" 
+		  FROM state_note 
+		 GROUP BY drone_state) AS "etat"
+    ON etat.drone_state = sub.id;
+$$;
 
+SELECT * FROM requete_dql_3(75);
 
-	 FROM 
 -- =======================================================
 --
 -- =======================================================
