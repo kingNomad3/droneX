@@ -259,10 +259,10 @@ BEGIN
 
   	IF validate_r_a_state = true AND validate_note_old_state = true AND validate_horodatage = true THEN
 		RAISE NOTICE 'Valid insert';
-		IF New.state = old_state_next_accepted_state AND old_state = 'R' THEN
+		IF NEW.state = old_state_next_accepted_state AND old_state = 'R' THEN
 			PERFORM insert_note(NEW.drone, 'maintenance_performed', NEW.start_date_time, NEW.employee, concat('Maintenance done by : ', 
 								(SELECT first_name FROM employee WHERE id = New.employee), ' ',(SELECT last_name FROM employee WHERE id = New.employee), ' on ',  NEW.start_date_time::DATE));
-		ELSIF New.state = old_state_next_rejected_state THEN
+		ELSIF NEW.state = old_state_next_rejected_state THEN
 			PERFORM insert_note(NEW.drone, 'problematic_observation', NEW.start_date_time, NEW.employee, concat('Problematic observation made by : ', 
 								(SELECT first_name FROM employee WHERE id = NEW.employee), ' ',(SELECT last_name FROM employee WHERE id = NEW.employee), ' on ',  NEW.start_date_time::DATE));
 		ELSE
@@ -290,5 +290,8 @@ BEFORE UPDATE OR DELETE
 ON drone_state
 FOR EACH ROW
 EXECUTE FUNCTION prevent_delete_update();
+
+--CALL simulation_transition_multiple_drone_random()
+
 
 

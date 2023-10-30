@@ -1,3 +1,4 @@
+DROP FUNCTION IF EXISTS is_accepted_state;
 DROP FUNCTION IF EXISTS requete_dql_3;
 -- =======================================================
 -- Requête #1
@@ -9,7 +10,7 @@ DROP FUNCTION IF EXISTS requete_dql_3;
 -- On désire le tout trié en ordre décroissant de :
 -- Le nom du modèle (croissant), date d'acquisition des drones (décroissant), drone_tag (croissant)
 --
--- Évaluation : 
+-- Évaluation : FONCTIONNE
 -- 
 --
 -- Réalisé par : Edouard Blain-Noël, Catherine Lavoie
@@ -84,7 +85,7 @@ ORDER BY "Model" ASC, "Effective start date" DESC, "Tag" ASC;
 --  Pour un drone donné, montrer l'historique des activités liées. Pour chaque activité on désire :
 -- L'état (avec le nom au complet), la date, le nom et prénom de l'employé lié (prénom + espace + nom), le nombre de notes disponibles																	
 --
--- Évaluation : 
+-- Évaluation : Fonctionne
 -- 
 --
 -- Réalisé par : Edouard Blain-Noël, Catherine Lavoie
@@ -112,11 +113,13 @@ SELECT DISTINCT state.name AS "Status",
 $$;
 
 -- Pour tester cette requête
--- SELECT name AS "Name", 
---        status AS "Status", 
---		  employee_full_name AS "Employee", 
---		  activities_amount AS "Amount of activities" 
---     FROM requete_dql_3(75);
+SELECT name AS "Name", 
+       status AS "Status", 
+	   employee_full_name AS "Employee", 
+	   activities_amount AS "Amount of activities" 
+  FROM requete_dql_3(56);
+  
+  SELECT * FROM state_note WHERE drone_state IN (SELECT * FROM drone_state WHERE drone = 56)
 
 -- =======================================================
 --
@@ -137,10 +140,10 @@ $$;
 --
 -- Le prénom, le nom de famille, le nombre de transitions acceptées, le ratio de transitions rejetées																		
 --
--- Évaluation : 
+-- Évaluation : Fonctionne
 --
--- Réalisé par : Rémi Chuet
--- Aidé par : Julien Coulombe-Morency 
+-- Réalisé par : Rémi Chuet, Julien Coulombe-Morency 
+--
 -- =======================================================
 
 DROP FUNCTION IF EXISTS is_accepted_state(state_value state.symbol%TYPE, id_drone_value drone.id%TYPE, start_date_time_value drone_state.start_date_time%TYPE);
