@@ -157,20 +157,19 @@ AS $$
 DECLARE previous_state state.symbol%TYPE;
 BEGIN
     -- Vérifier si l'état est accepté
-    IF state_value IN ('T','P','D','L') THEN
+    IF state_value IN ('T', 'P', 'D', 'L') THEN
         RETURN TRUE;    
-    -- Si etat est I
+    -- Si l'état est 'I'
     ELSIF state_value = 'I' THEN
         -- Vérifier la transition précédente
-        
-        previous_state := (SELECT state INTO 
+        SELECT state INTO previous_state
         FROM drone_state
-        WHERE id_drone = id_drone_value
+        WHERE drone = id_drone_value
             AND start_date_time < start_date_time_value
         ORDER BY start_date_time DESC
-        LIMIT 1)    -- recuperer seulement 1
+        LIMIT 1;
         
-        RETURN previous_state = 'R'
+        RETURN previous_state = 'R';
     END IF;
     
     -- Par défaut, la transition est mauvaise
