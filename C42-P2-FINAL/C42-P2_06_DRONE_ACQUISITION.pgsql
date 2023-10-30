@@ -1,18 +1,13 @@
 /*
-	Membres : 
 
-	Julien Coulombe-Morency, 
-	Remi Chuet, 
-	Édouard Blain-Noël, 
-	Catherine Lavoie, 
-	Benjamin Jouinvil, 
-	François Maltais
-		
-	Date de création : 2023-10-21
-	Dernière modification : 2023-10-27
-	C42-P2_06_DRONE_ACQUISITION.pgsql
+C42-P2_06_DRONE_ACQUISITION.pgsql
+420-C42-IN Langages d'exploitation des bases de données
+Auteurs : Julien Coulombe-Morency, Benjamin Joinvil, Édouard Blain-Noël, François Maltais, Catherine Lavoie, Remi Chuet
+Date de création : 2023-10-18 
+Dernière modification : 2023-10-27
 
 */
+
 DROP PROCEDURE IF EXISTS simulate_drone_acquisition(INTEGER, TIMESTAMP, TIMESTAMP);
 DROP FUNCTION IF EXISTS get_random_employee;
 DROP FUNCTION IF EXISTS get_random_model;
@@ -20,41 +15,33 @@ DROP PROCEDURE IF EXISTS simulate_drone_acquisition(drone_state.start_date_time%
 DROP FUNCTION IF EXISTS generate_random_serial;
 DROP FUNCTION IF EXISTS random_char;
 DROP FUNCTION IF EXISTS random_integer;
-DROP PROCEDURE IF EXISTS simulate_drone_acquisition(
-	drone_model.name%TYPE,
-	employee.ssn%TYPE,
-	drone_state.start_date_time%TYPE);
+DROP PROCEDURE IF EXISTS simulate_drone_acquisition(drone_model.name%TYPE,employee.ssn%TYPE,drone_state.start_date_time%TYPE);
 DROP FUNCTION IF EXISTS concat_name;
-DROP PROCEDURE IF EXISTS add_drone_acquisition(
-    drone_model.name%TYPE,
-    drone.serial_number%TYPE,
-    employee.ssn%TYPE, 
-    drone_state.start_date_time%TYPE, 
-    employee.ssn%TYPE, 
-    drone.acquisition_date%TYPE, 
-    employee.ssn%TYPE);
+DROP PROCEDURE IF EXISTS add_drone_acquisition(drone_model.name%TYPE,drone.serial_number%TYPE,employee.ssn%TYPE, drone_state.start_date_time%TYPE, employee.ssn%TYPE, drone.acquisition_date%TYPE, employee.ssn%TYPE);
 DROP FUNCTION IF EXISTS generate_drone_tag;
 DROP FUNCTION IF EXISTS drone_tag_d;
 DROP FUNCTION IF EXISTS drone_tag_c;
 DROP FUNCTION IF EXISTS drone_tag_b;
 DROP FUNCTION IF EXISTS drone_tag_a;
 
+/*FONCTION GÉNÉRATRICE DU DRONE TAG*/
+
 -- Fonction utilitaire (partie A du drone_tag)
 CREATE OR REPLACE FUNCTION drone_tag_a (manufacturer_name manufacturing_company.name%TYPE) 
-RETURNS CHAR(3) LANGUAGE PLPGSQL 
+RETURNS CHAR(3) 
+LANGUAGE PLPGSQL 
 AS $$
 BEGIN
 	manufacturer_name := UPPER(REGEXP_REPLACE(manufacturer_name, '[^a-zA-Z]', '', 'g'));
 	RETURN RPAD(SUBSTR(manufacturer_name, 1, 3), 3, 'x');
-END
-$$;
+END$$;
 
 
 -- Fonction utilitaire (partie B du drone_tag)
 CREATE OR REPLACE FUNCTION drone_tag_b (model_name drone_model.name%TYPE) 
-RETURNS CHAR(3) LANGUAGE PLPGSQL
-AS 
-$$
+RETURNS CHAR(3) 
+LANGUAGE PLPGSQL
+AS $$
 DECLARE
 		trimmed VARCHAR := UPPER(REPLACE(model_name, ' ', ''));
 		len INT := LENGTH(trimmed);
@@ -70,40 +57,34 @@ BEGIN
 	ELSE 
 		RETURN CONCAT(first, SUBSTR(trimmed, len/2 + bias, 1), last);
 	END IF;
-END
-$$;
-
+END$$;
 
 -- Fonction utilitaire (partie C du drone_tag)
 CREATE OR REPLACE FUNCTION drone_tag_c (acquisition_date drone.acquisition_date%TYPE) 
-RETURNS CHAR(6) LANGUAGE PLPGSQL
-AS 
-$$
+RETURNS CHAR(6) 
+LANGUAGE PLPGSQL
+AS $$
 DECLARE date_reference DATE := '2000-01-01'::date;
 BEGIN
 	RETURN LPAD((acquisition_date - date_reference)::VARCHAR, 6, '0');
-END
-$$;
+END$$;
 
 -- Fonction utilitaire (partie D du drone_tag)
 CREATE OR REPLACE FUNCTION drone_tag_d () 
-RETURNS CHAR(6) LANGUAGE PLPGSQL
-AS 
-$$
+RETURNS CHAR(6) 
+LANGUAGE PLPGSQL
+AS $$
 DECLARE current_count INT := 1000 + (SELECT COUNT(*) FROM drone) * 10;
 BEGIN
 	RETURN TRANSLATE(LPAD(current_count::CHAR(6), 6, '0'), '0123456789', 'ZUDTQCSPHN');
-END
-$$;
+END$$;
 
 
-CREATE OR REPLACE FUNCTION generate_drone_tag (
-		model_name drone_model.name%TYPE, 
-		drone_acquisition drone.acquisition_date%TYPE
-		) 
-RETURNS drone.drone_tag%TYPE LANGUAGE PLPGSQL
-AS 
-$$
+CREATE OR REPLACE FUNCTION generate_drone_tag (model_name drone_model.name%TYPE, 
+											   drone_acquisition drone.acquisition_date%TYPE) 
+RETURNS drone.drone_tag%TYPE 
+LANGUAGE PLPGSQL
+AS $$
 DECLARE manufacturer_name manufacturing_company.name%TYPE;
 
 BEGIN
@@ -111,28 +92,24 @@ BEGIN
 	   THEN RAISE EXCEPTION 'Le modèle % n''existe pas', model_name;
 	END IF;
 
-	manufacturer_name := (
-		SELECT name 
-		  FROM manufacturing_company 
-		 WHERE id = (SELECT manufacturer FROM drone_model WHERE name = model_name)
-	);
+	manufacturer_name := (SELECT name 
+		  					FROM manufacturing_company 
+		 				WHERE id = (SELECT manufacturer FROM drone_model WHERE name = model_name));
+						
 	RETURN drone_tag_a(manufacturer_name) || drone_tag_b(model_name) || '-' || drone_tag_c(drone_acquisition) || '-' || drone_tag_d();
-END
-$$;
+END$$;
 
 
 
-CREATE OR REPLACE PROCEDURE add_drone_acquisition(
-    model_name              drone_model.name%TYPE,
-    serial_drone            drone.serial_number%TYPE,
-    registering_employee    employee.ssn%TYPE, 
-    registering_timestamp   drone_state.start_date_time%TYPE, 
-    receiving_employee      employee.ssn%TYPE, 
-    receiving_date          drone.acquisition_date%TYPE, 
-    unpacking_employee      employee.ssn%TYPE)
+CREATE OR REPLACE PROCEDURE add_drone_acquisition(model_name drone_model.name%TYPE,
+												  serial_drone drone.serial_number%TYPE,
+												  registering_employee employee.ssn%TYPE, 
+												  registering_timestamp drone_state.start_date_time%TYPE, 
+												  receiving_employee employee.ssn%TYPE, 
+												  receiving_date drone.acquisition_date%TYPE, 
+												  unpacking_employee employee.ssn%TYPE)
 LANGUAGE PLPGSQL 
-AS
-$$
+AS $$
 DECLARE drone_initial_state CHAR(1) := 'I';
 		note_type_initial note_type := 'general_observation'::note_type;
         drone_id drone.id%TYPE := null;
@@ -164,36 +141,37 @@ BEGIN
 			'Received by : ' || concat_name(receiving_employee) || ' on ' || receiving_date || 
 			E'\nUnpacked by : ' || concat_name(unpacking_employee));
 
-END
-$$;
+END$$;
 
 -- concatenation du prenom et nom de famille
 CREATE OR REPLACE FUNCTION concat_name(ssn_employe employee.ssn%TYPE) 
-RETURNS VARCHAR LANGUAGE SQL 
+	RETURNS VARCHAR 
+LANGUAGE SQL 
 AS $$
     SELECT first_name || ' ' || last_name FROM employee WHERE ssn = ssn_employe;
 $$;
 
--- Simulations 1
-CREATE OR REPLACE PROCEDURE simulate_drone_acquisition(
-	model_name drone_model.name%TYPE,
-	registering_employee employee.ssn%TYPE,
-	registering_timestamp drone_state.start_date_time%TYPE
-) LANGUAGE PLPGSQL AS 
-$$
-DECLARE set_interval INTERVAL := '1 HOUR'::INTERVAL; 
-BEGIN 
-CALL add_drone_acquisition(
-	model_name, 
-	generate_random_serial(), 
-	registering_employee, 
-	registering_timestamp, 
-	registering_employee, 
-	(registering_timestamp - set_interval)::date,
-	registering_employee);
+/*FONCTIONS DE SIMULATION*/
 
-END
-$$;
+-- Simulations 1
+CREATE OR REPLACE PROCEDURE simulate_drone_acquisition(model_name drone_model.name%TYPE,
+													   registering_employee employee.ssn%TYPE,
+													   registering_timestamp drone_state.start_date_time%TYPE) 
+LANGUAGE PLPGSQL 
+AS $$
+DECLARE 
+	set_interval INTERVAL := '1 HOUR'::INTERVAL; 
+BEGIN 
+	CALL add_drone_acquisition(
+		model_name, 
+		generate_random_serial(), 
+		registering_employee, 
+		registering_timestamp, 
+		registering_employee, 
+		(registering_timestamp - set_interval)::date,
+		registering_employee);
+
+END$$;
 
 CREATE OR REPLACE FUNCTION random_integer(min INT, max INT) 
     RETURNS INT
@@ -211,7 +189,10 @@ $$;
 
 
 -- Génère un numéro de série
-CREATE OR REPLACE FUNCTION generate_random_serial() RETURNS drone.serial_number%type LANGUAGE PLPGSQL AS $$
+CREATE OR REPLACE FUNCTION generate_random_serial() 
+	RETURNS drone.serial_number%type 
+LANGUAGE PLPGSQL 
+AS $$
 DECLARE
 	output_chars text := '';
 	n INTEGER := FLOOR(random() * 6)::INT + 6; -- de 6 à 12 caractères
@@ -225,12 +206,12 @@ BEGIN
 	IF output_chars NOT IN (SELECT serial_number FROM drone) THEN RETURN output_chars; -- si ce serial existe, on recommence
 	ELSE RETURN generate_random_serial();
 	END IF;
-END
-$$;
+END$$;
 
 -- Simulation 2
 CREATE OR REPLACE PROCEDURE simulate_drone_acquisition(ref_timestamp drone_state.start_date_time%TYPE)
-LANGUAGE PLPGSQL AS $$
+LANGUAGE PLPGSQL 
+AS $$
 DECLARE 
 	random_value DOUBLE PRECISION := random();
 	reg_emp employee.ssn%TYPE := get_random_employee();
@@ -240,38 +221,45 @@ DECLARE
 	model VARCHAR := get_random_model();
 	serial VARCHAR := generate_random_serial();
 BEGIN
-IF random_value <= 0.25 THEN unp_emp := rec_emp;
-ELSE unp_emp := reg_emp;
-END IF;
 
-CALL add_drone_acquisition(
-	model,
-	serial,
-	reg_emp,
-	ref_timestamp,
-	rec_emp,
-	(ref_timestamp - '1 DAY'::INTERVAL)::DATE,
-	unp_emp);
-END
-$$;
+	IF random_value <= 0.25 THEN 
+		unp_emp := rec_emp;
+	ELSE 
+		unp_emp := reg_emp;
+	END IF;
 
-CREATE OR REPLACE FUNCTION get_random_model() RETURNS drone_model.name%TYPE LANGUAGE SQL AS $$
+	CALL add_drone_acquisition(model,
+							   serial,
+							   reg_emp,
+							   ref_timestamp,
+							   rec_emp,
+							   (ref_timestamp - '1 DAY'::INTERVAL)::DATE,
+							   unp_emp);
+END$$;
+
+CREATE OR REPLACE FUNCTION get_random_model() 
+	RETURNS drone_model.name%TYPE 
+LANGUAGE SQL 
+AS $$
 	SELECT name FROM drone_model ORDER BY random() LIMIT 1;
 $$;
 
-CREATE OR REPLACE FUNCTION get_random_employee () RETURNS employee.ssn%TYPE LANGUAGE SQL AS $$
+CREATE OR REPLACE FUNCTION get_random_employee() 
+RETURNS employee.ssn%TYPE 
+LANGUAGE SQL 
+AS $$
 	SELECT ssn FROM employee ORDER BY random() LIMIT 1;
 $$;
 
 
 -- Simulation 3
-CREATE OR REPLACE PROCEDURE simulate_drone_acquisition(
-	n INTEGER, 
-	from_timestamp TIMESTAMP, 
-	to_timestamp TIMESTAMP) 
+CREATE OR REPLACE PROCEDURE simulate_drone_acquisition(n INTEGER, 
+													   from_timestamp TIMESTAMP, 
+													   to_timestamp TIMESTAMP) 
 LANGUAGE PLPGSQL 
 AS $$
-DECLARE time_interval INTERVAL;
+DECLARE 
+	time_interval INTERVAL;
 BEGIN
 	IF n < 1 
 	    THEN 
@@ -286,19 +274,17 @@ BEGIN
 	    LOOP
 		CALL simulate_drone_acquisition(from_timestamp + (time_interval * i));
 	END LOOP;
-END
-$$;
+END$$;
 
---SELECT * FROM employee;
---SELECT * FROM DRONE
-CALL add_drone_acquisition(
-	'Spot',
-    'IFAC.96',
-    '444444444', 
-    NOW()::TIMESTAMP + '10 DAY'::INTERVAL, 
-    '333333333', 
-    (NOW() - '1 DAY'::INTERVAL)::DATE, 
-    '555555555');
+/*CALL DES FONCTION DE SIMULATION */
+
+CALL add_drone_acquisition('Spot',
+						   'IFAC.96',
+						   '444444444', 
+						   NOW()::TIMESTAMP + '10 DAY'::INTERVAL, 
+						   '333333333', 
+						   (NOW() - '1 DAY'::INTERVAL)::DATE, 
+						   '555555555');
 	
 CALL simulate_drone_acquisition('Lilium Jet', '333333333', NOW()::TIMESTAMP + '3 DAY'::INTERVAL);
 CALL simulate_drone_acquisition(NOW()::TIMESTAMP);

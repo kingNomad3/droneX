@@ -9,16 +9,18 @@ Dernière modification : 2023-10-30
 */
 
 DROP TRIGGER IF EXISTS prevent_delete_update_trig ON drone_state;
+DROP TRIGGER IF EXISTS insert_into_state_note_trig ON drone_state;
 DROP TRIGGER IF EXISTS validate_insert_drone_state_trig ON drone_state;	
-DROP FUNCTION IF EXISTS prevent_delete_update;
+DROP FUNCTION IF EXISTS insert_into_state_note;
 DROP FUNCTION IF EXISTS validate_insert_drone_state;
+DROP FUNCTION IF EXISTS prevent_delete_update;
 DROP FUNCTION IF EXISTS get_most_recent_insert_id(drone_param INTEGER);
 DROP FUNCTION IF EXISTS get_most_recent_insert_state(drone_param INTEGER);
 DROP FUNCTION IF EXISTS get_next_rejected_state(symbol_param CHAR(1));	
 DROP FUNCTION IF EXISTS get_next_accepted_state(symbol_param CHAR(1));	
 DROP FUNCTION IF EXISTS get_note_from_state(drone_id_param INTEGER);
 DROP FUNCTION IF EXISTS insert_note(drone_state INTEGER, note note_type, date_time TIMESTAMP, employee INTEGER, details VARCHAR(2048));
-DROP PROCEDURE IF EXISTS simulation_transition_multiple_drone_random();
+DROP PROCEDURE IF EXISTS simulation_transition_multiple_drone_random(nombre_insertion INTEGER);
 DROP PROCEDURE IF EXISTS simulation_transition_multiple(drone_id INTEGER, date_commencement TIMESTAMP, date_fin TIMESTAMP);
 DROP PROCEDURE IF EXISTS simulation_transition(drone_id INTEGER, date_insertion TIMESTAMP);
 
@@ -61,19 +63,18 @@ BEGIN
 		random_timestamp := random_timestamp(date_commencement, date_fin);
         RAISE NOTICE '%', i;
 		IF probability = true THEN
-			PERFORM simulation_transition(drone_id, random_timestamp);
+			CALL simulation_transition(drone_id, random_timestamp);
 		END IF;
     END LOOP;
 END$$; 
 
 
 -- Une fonction de simulation simulant n transitions pour un drone généré aléatoirement
-CREATE OR REPLACE PROCEDURE simulation_transition_multiple_drone_random()
+CREATE OR REPLACE PROCEDURE simulation_transition_multiple_drone_random(nombre_insertion INTEGER)
 LANGUAGE plpgsql
 AS $$
 DECLARE
-	random_drone_id INTEGER;
-	nombre_insertion INTEGER := 100; 												-- Changer la deuxieme valeur pour modifier le nb de transitions
+	random_drone_id INTEGER;												-- Changer la deuxieme valeur pour modifier le nb de transitions
 	random_timestamp TIMESTAMP;
 	i INTEGER;
 	probability BOOLEAN := (SELECT random_event(0.75));
@@ -104,7 +105,7 @@ CREATE OR REPLACE FUNCTION insert_note(drone_state INTEGER,
 									   date_time TIMESTAMP, 
 									   employee INTEGER, 
 									   details VARCHAR(2048))
-RETURNS VOID
+	RETURNS VOID
 LANGUAGE PLPGSQL
 AS $$
 BEGIN
@@ -131,7 +132,7 @@ END$$;
 
 --Récupérer le prochain next_accepted_state																	   
 CREATE OR REPLACE FUNCTION get_next_accepted_state(symbol_param CHAR(1)) 
-RETURNS CHAR(1)
+	RETURNS CHAR(1)
 LANGUAGE PLPGSQL
 AS $$
 DECLARE 
@@ -146,7 +147,7 @@ END$$;
 
 --Récupérer le prochain next_rejected_state																	   
 CREATE OR REPLACE FUNCTION get_next_rejected_state(symbol_param CHAR(1)) 
-RETURNS CHAR(1)
+	RETURNS CHAR(1)
 LANGUAGE PLPGSQL
 AS $$
 DECLARE 
@@ -161,7 +162,7 @@ END$$;
 
 --Récupérer le state de l'insert le plus recent avec drone
 CREATE OR REPLACE FUNCTION get_most_recent_insert_state(drone_param INTEGER) 
-RETURNS CHAR(1)
+	RETURNS CHAR(1)
 LANGUAGE PLPGSQL
 AS $$
 DECLARE 
@@ -177,7 +178,7 @@ END$$;
 
 --Récupérer l'id de l'insert le plus recent avec drone
 CREATE OR REPLACE FUNCTION get_most_recent_insert_id(drone_param INTEGER) 
-RETURNS INTEGER
+	RETURNS INTEGER
 LANGUAGE PLPGSQL
 AS $$
 DECLARE 
@@ -196,12 +197,12 @@ CREATE OR REPLACE FUNCTION prevent_delete_update ()
 RETURNS TRIGGER
 LANGUAGE PLPGSQL AS $$
 BEGIN
-	RAISE EXCEPTION 'Opération interdite [_OPERATION_NAME_] sur la table _TABLE_NAME_.';
+	RAISE EXCEPTION 'Opération % interdite dans table %', TG_OP, TG_TABLE_NAME;
 END$$;
 
 --Fonction du TRIGGER VALIDATE
 CREATE OR REPLACE FUNCTION validate_insert_drone_state()
-RETURNS TRIGGER
+	RETURNS TRIGGER
 LANGUAGE plpgsql 
 AS $$
 DECLARE
@@ -210,7 +211,7 @@ DECLARE
 	old_state_next_rejected_state CHAR(1);
 	
 	old_state_note note_type;
-	old_state_number_insertion INTEGER := (SELECT COUNT(*) FROM drone_state WHERE drone_state.drone = NEW.drone);
+	--old_state_number_insertion INTEGER := (SELECT COUNT(*) FROM drone_state WHERE drone_state.drone = NEW.drone);
 	
 	validate_r_a_state BOOLEAN := false;
 	validate_note_old_state BOOLEAN := false;
@@ -240,7 +241,9 @@ BEGIN
 -- 3. partie qui verifie si la note associe a l'ancien state est la bonne
  	
 	IF New.state = old_state_next_accepted_state AND old_state = 'R' THEN -- i.e si NEW.state = i
-		IF old_state_note = 'problematic_observation'::note_type OR old_state_note = 'maintenance_performed'::note_type OR old_state_note = 'repair_completed'::note_type THEN
+		IF old_state_note = 'problematic_observation'::note_type 
+		OR old_state_note = 'maintenance_performed'::note_type 
+		OR old_state_note = 'repair_completed'::note_type THEN
 			validate_note_old_state = true;	
 		END IF;
 	ELSIF New.state = old_state_next_accepted_state OR NEW.state = old_state_next_rejected_state THEN
@@ -258,31 +261,58 @@ BEGIN
 -- 5. partie de la fonction qui vérifie si toute les conditions d'insertion sont remplies puis insert le message concéquent
 
   	IF validate_r_a_state = true AND validate_note_old_state = true AND validate_horodatage = true THEN
-		RAISE NOTICE 'Valid insert';
-		IF NEW.state = old_state_next_accepted_state AND old_state = 'R' THEN
-			PERFORM insert_note(NEW.drone, 'maintenance_performed', NEW.start_date_time, NEW.employee, concat('Maintenance done by : ', 
-								(SELECT first_name FROM employee WHERE id = New.employee), ' ',(SELECT last_name FROM employee WHERE id = New.employee), ' on ',  NEW.start_date_time::DATE));
-		ELSIF NEW.state = old_state_next_rejected_state THEN
-			PERFORM insert_note(NEW.drone, 'problematic_observation', NEW.start_date_time, NEW.employee, concat('Problematic observation made by : ', 
-								(SELECT first_name FROM employee WHERE id = NEW.employee), ' ',(SELECT last_name FROM employee WHERE id = NEW.employee), ' on ',  NEW.start_date_time::DATE));
-		ELSE
-			PERFORM insert_note(NEW.drone, 'general_observation', NEW.start_date_time, NEW.employee, concat('State transition approved by : ', 
-								(SELECT first_name FROM employee WHERE id = NEW.employee), ' ',(SELECT last_name FROM employee WHERE id = NEW.employee), ' on ',  NEW.start_date_time::DATE));
-		END IF;
-		
+		RAISE NOTICE 'BONNE INSERTION';
     	RETURN NEW;
   	ELSE
-    	RAISE EXCEPTION 'Insert validation failed';
+    	RAISE EXCEPTION 'Insert validation failed: validate_r_a_state %  validate_note_old_state %  validate_horodatage %', validate_r_a_state, validate_note_old_state, validate_horodatage;
   	END IF;
 END$$; 
+
+-- Trigger after insert in drone_state that inserts state_notes:
+
+CREATE OR REPLACE FUNCTION insert_into_state_note() 
+	RETURNS TRIGGER
+LANGUAGE PLPGSQL 
+AS $$
+DECLARE
+	old_state CHAR(1);																			   
+	old_state_next_accepted_state CHAR(1);
+	old_state_next_rejected_state CHAR(1);
+BEGIN
+	old_state := get_most_recent_insert_state(New.drone);
+	old_state_next_accepted_state := get_next_accepted_state(old_state);
+	old_state_next_rejected_state := get_next_rejected_state(old_state);
+
+	IF NEW.state = old_state_next_accepted_state AND old_state = 'R' THEN
+		PERFORM insert_note(NEW.id, 'maintenance_performed', NEW.start_date_time, NEW.employee, concat('Maintenance done by : ', 
+							(SELECT first_name FROM employee WHERE id = New.employee), ' ',(SELECT last_name FROM employee WHERE id = New.employee), ' on ',  NEW.start_date_time::DATE));
+		RAISE NOTICE 'CA MARCHE MAINTENANCE';
+	ELSIF NEW.state = old_state_next_rejected_state THEN
+		PERFORM insert_note(NEW.id, 'problematic_observation', NEW.start_date_time, NEW.employee, concat('Problematic observation made by : ', 
+							(SELECT first_name FROM employee WHERE id = NEW.employee), ' ',(SELECT last_name FROM employee WHERE id = NEW.employee), ' on ',  NEW.start_date_time::DATE));
+		RAISE NOTICE 'CA MARCHE PROB';
+	ELSE
+		PERFORM insert_note(NEW.id, 'general_observation', NEW.start_date_time, NEW.employee, concat('State transition approved by : ', 
+							(SELECT first_name FROM employee WHERE id = NEW.employee), ' ',(SELECT last_name FROM employee WHERE id = NEW.employee), ' on ',  NEW.start_date_time::DATE));
+		RAISE NOTICE 'CA MARCHE GENERA';
+	END IF;
+
+	RETURN NULL;
+END$$;
   
--- Trigger before insert
+-- Trigger before insert into drone_state
 CREATE TRIGGER validate_insert_drone_state_trig
 BEFORE INSERT
 ON drone_state
 FOR EACH ROW
 EXECUTE FUNCTION validate_insert_drone_state();
 
+--Trigger after insert into drone_state
+CREATE TRIGGER insert_into_state_note_trig
+AFTER INSERT
+ON drone_state
+FOR EACH ROW
+EXECUTE FUNCTION insert_into_state_note();
 
 --Trigger before update or delete
 CREATE TRIGGER prevent_delete_update_trig
@@ -291,7 +321,12 @@ ON drone_state
 FOR EACH ROW
 EXECUTE FUNCTION prevent_delete_update();
 
---CALL simulation_transition_multiple_drone_random()
 
+/*CALL DES FONCTION DE SIMULATION */
+
+-- CALL simulation_transition_multiple_drone_random(100)	-- Changer le chiffre pour générer plus de transition
+
+-- SELECT * FROM state_note
+-- SELECT * FROM drone
 
 

@@ -1,19 +1,18 @@
 /*
-	Membres : 
-	
-	Julien Coulombe-Morency, 
-	Remi Chuet, 
-	Édouard Blain-Noël, 
-	Catherine Lavoie, 
-	Benjamin Jouinvil, 
-	François Maltais
-		
-	Date de création : 2023-10-19 
-	Dernière modification : 2023-10-19
-	C42-P2_02_POPULATE_REFERENCE.pgsql
-	V1.0	
+
+C42-P2_02_POPULATE_REFERENCE.pgsql
+420-C42-IN Langages d'exploitation des bases de données
+Auteurs : Julien Coulombe-Morency, Benjamin Joinvil, Édouard Blain-Noël, François Maltais, Catherine Lavoie, Remi Chuet
+Date de création : 2023-10-18 
+Dernière modification : 2023-10-19
+
 */
 
+DROP TRIGGER IF EXISTS forbid_dml_operations_ts_trig ON technical_specification;
+DROP TRIGGER IF EXISTS forbid_dml_operations_unit_trig ON unit;	
+DROP FUNCTION IF EXISTS forbid_dml_operations;
+
+--Utilisation des prepared statement pour insérer les donnée dans les tables unit.
 
 PREPARE ins_unit(VARCHAR(16),VARCHAR(64), VARCHAR(1024)) AS 
     INSERT INTO unit(symbol, name , description)VALUES ($1,$2,$3);
@@ -93,8 +92,8 @@ COMMIT;
 
 DEALLOCATE ins_unit;
 
-
-
+--Utilisation des prepared statement pour insérer les donnée dans les tables technical_specification.
+					 
 PREPARE ins_technical_specification(VARCHAR(64),VARCHAR(512),VARCHAR(16)) AS 
 INSERT INTO technical_specification(name, description, unit) VALUES ($1,$2,(SELECT id FROM unit WHERE symbol = $3));
 
@@ -188,7 +187,8 @@ COMMIT;
 DEALLOCATE ins_technical_specification;
 
 
-
+--Création du trigger qui interdit les opérations du DML dans la table unit et technical_specification
+										
 CREATE OR REPLACE FUNCTION forbid_dml_operations() 
     RETURNS TRIGGER
 LANGUAGE PLPGSQL AS $$
@@ -196,12 +196,12 @@ BEGIN
     RAISE EXCEPTION 'Opération % interdite dans table %', TG_OP, TG_TABLE_NAME;
 END$$;
 
-CREATE TRIGGER forbid_dml_operations_trig_unit
+CREATE TRIGGER forbid_dml_operations_unit_trig
 	BEFORE INSERT OR UPDATE OR DELETE ON unit
 	FOR EACH ROW
 	EXECUTE PROCEDURE forbid_dml_operations();
 
-CREATE TRIGGER forbid_dml_operations_trig_ts
+CREATE TRIGGER forbid_dml_operations_ts_trig
 	BEFORE INSERT OR UPDATE OR DELETE ON technical_specification
 	FOR EACH ROW
 	EXECUTE PROCEDURE forbid_dml_operations();

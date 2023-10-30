@@ -1,27 +1,24 @@
 /*
-	Membres : 
-	
-	Julien Coulombe-Morency, 
-	Remi Chuet, 
-	Édouard Blain-Noël, 
-	Catherine Lavoie, 
-	Benjamin Jouinvil, 
-	François Maltais
-		
-	Date de création : 2023-10-19 
-	Dernière modification : 2023-10-19
-	C42-P2_04_POPULATE_DRONE_MODEL.pgsql
-	V1.0	
+
+C42-P2_04_POPULATE_DRONE_MODEL.pgsql
+420-C42-IN Langages d'exploitation des bases de données
+Auteurs : Julien Coulombe-Morency, Benjamin Joinvil, Édouard Blain-Noël, François Maltais, Catherine Lavoie, Remi Chuet
+Date de création : 2023-10-18 
+Dernière modification : 2023-10-19
+
 */
 
 
--- Procedure d'insertion:
--- Manufacturier
+/*PROCÉDURE D'INSERTION*/
 
-CREATE OR REPLACE PROCEDURE add_drone_manufacturer(name_value VARCHAR(64), web_site_value VARCHAR(256))
+-- Insertion dans manufacturier:
+
+CREATE OR REPLACE PROCEDURE add_drone_manufacturer(name_value VARCHAR(64), 
+												   web_site_value VARCHAR(256))
 LANGUAGE SQL
 AS $$
-	INSERT INTO manufacturing_company(name , web_site)VALUES (name_value, web_site_value);
+	INSERT INTO manufacturing_company(name , web_site)
+		VALUES (name_value, web_site_value);
 $$;
 
 BEGIN;
@@ -39,15 +36,13 @@ BEGIN;
 	CALL add_drone_manufacturer($$Deep Trekker$$, 'https://www.deeptrekker.com/');
 COMMIT;
 
--- Drone model / Drone domain
+-- Insertion dans drone_model:
 
-CREATE OR REPLACE PROCEDURE add_drone_model(
-	name_value VARCHAR(64),
-	manufacturer_value VARCHAR(64),
-	domains_value VARCHAR(256),
-	description_value VARCHAR(2048),
-	web_site_value VARCHAR(256)
-)
+CREATE OR REPLACE PROCEDURE add_drone_model(name_value VARCHAR(64),
+											manufacturer_value VARCHAR(64),
+											domains_value VARCHAR(256),
+											description_value VARCHAR(2048),
+											web_site_value VARCHAR(256))
 LANGUAGE PLPGSQL
 AS $$
 DECLARE
@@ -83,16 +78,19 @@ BEGIN;
 	CALL add_drone_model($$PackBot 510$$, $$Teledyne Flir$$, $$Chenillé$$, $$Robot terrestre pour la reconnaissance, surveillance et interventions en zones dangereuses.$$, 'https://www.flir.com/products/packbot/');
 COMMIT;
 
--- Drone spec
+-- Insertion dans drone_specification:
 
-CREATE OR REPLACE PROCEDURE add_drone_specification(model_name VARCHAR(64), spec_name VARCHAR(64), spec_value VARCHAR(256), spec_comments VARCHAR(1024)) 
+CREATE OR REPLACE PROCEDURE add_drone_specification(model_name VARCHAR(64), 
+						 							spec_name VARCHAR(64), 
+						 							spec_value VARCHAR(256), 
+						 							spec_comments VARCHAR(1024)) 
 LANGUAGE PLPGSQL
 AS $$
 DECLARE
 	model_name_temp INTEGER = (SELECT id FROM drone_model WHERE name=model_name);
 	spec_name_temp INTEGER = (SELECT id FROM technical_specification WHERE name = spec_name);				 
 BEGIN
-	IF model_name_temp IS NOT NULL AND spec_name_temp IS NOT NULL THEN
+	IF model_name_temp IS NOT NULL AND spec_name_temp IS NOT NULL THEN 				--Check pour une valeur NULL, en cas de donnée corrompue
 		INSERT INTO drone_specification(drone_model, specification, value, comments) 
 			VALUES(model_name_temp, spec_name_temp, spec_value ,spec_comments);
 	ELSE

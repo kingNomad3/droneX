@@ -1,28 +1,22 @@
 /*
-	Membres : 
-	
-	Julien Coulombe-Morency, 
-	Remi Chuet, 
-	Édouard Blain-Noël, 
-	Catherine Lavoie, 
-	Benjamin Jouinvil, 
-	François Maltais
-		
-	Date de création : 2023-10-19 
-	Dernière modification : 2023-10-19
-	C42-P2_03_POPULATE_REF_IMMUTABLE.pgsql
-	V1.0	
+
+C42-P2_03_POPULATE_REF_IMMUTABLE.pgsql
+420-C42-IN Langages d'exploitation des bases de données
+Auteurs : Julien Coulombe-Morency, Benjamin Joinvil, Édouard Blain-Noël, François Maltais, Catherine Lavoie, Remi Chuet
+Date de création : 2023-10-18 
+Dernière modification : 2023-10-19
+
 */
 
+DROP TRIGGER IF EXISTS forbid_dml_operations_trig_state ON state;
+DROP TRIGGER IF EXISTS forbid_dml_operations_trig_od ON operational_domain;
 
 -- Transaction pour l'insertion dans la table operational_domain :
 -- Fonction d'insertion:
 
-
-CREATE OR REPLACE PROCEDURE inserer_data_operational_domain(
-	insert_name VARCHAR(32),
-	insert_description VARCHAR(256),
-	insert_depend VARCHAR(32)
+CREATE OR REPLACE PROCEDURE inserer_data_operational_domain(insert_name VARCHAR(32),
+															insert_description VARCHAR(256),
+															insert_depend VARCHAR(32)
 )
 LANGUAGE SQL
 AS $$
@@ -53,7 +47,6 @@ BEGIN;
 COMMIT;
 
 -- Transaction pour l'insertion dans la table state:
-
 BEGIN;
 
 	INSERT INTO state (symbol, name, description, next_accepted_state, next_rejected_state)
@@ -71,12 +64,13 @@ COMMIT;
 
 DROP PROCEDURE inserer_data_operational_domain(insert_name VARCHAR(32), insert_description VARCHAR(256), insert_depend VARCHAR(32));
 
-CREATE TRIGGER forbid_dml_operations_trig_state
+
+CREATE TRIGGER forbid_dml_operations_state_trig
 	BEFORE INSERT OR UPDATE OR DELETE ON state
 	FOR EACH ROW
 	EXECUTE PROCEDURE forbid_dml_operations();
 
-CREATE TRIGGER forbid_dml_operations_trig_od
+CREATE TRIGGER forbid_dml_operations_od_trig
 	BEFORE INSERT OR UPDATE OR DELETE ON operational_domain
 	FOR EACH ROW
 	EXECUTE PROCEDURE forbid_dml_operations();

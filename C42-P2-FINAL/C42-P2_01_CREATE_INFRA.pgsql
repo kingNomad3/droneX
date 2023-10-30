@@ -1,17 +1,11 @@
 /*
-	Membres : 
-	
-	Julien Coulombe-Morency, 
-	Remi Chuet, 
-	Édouard Blain-Noël, 
-	Catherine Lavoie, 
-	Benjamin Jouinvil, 
-	François Maltais
-		
-	Date de création : 2023-10-18 
-	Dernière modification : 2023-10-18
-	C42-P2_01_CREATE_INFRA.pgsql
-	V1.0	
+
+C42-P2_01_CREATE_INFRA.pgsql
+420-C42-IN Langages d'exploitation des bases de données
+Auteurs : Julien Coulombe-Morency, Benjamin Joinvil, Édouard Blain-Noël, François Maltais, Catherine Lavoie, Remi Chuet
+Date de création : 2023-10-18 
+Dernière modification : 2023-10-30
+
 */
 
 ALTER TABLE IF EXISTS state DROP CONSTRAINT IF EXISTS fk_state_rejected;

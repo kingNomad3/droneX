@@ -1,17 +1,11 @@
 /*
-	Membres : 
 
-	Julien Coulombe-Morency, 
-	Remi Chuet, 
-	Édouard Blain-Noël, 
-	Catherine Lavoie, 
-	Benjamin Jouinvil, 
-	François Maltais
-		
-	Date de création : 2023-10-21
-	Dernière modification : 2023-10-21
-	C42-P2_05_HIRING.pgsql
-	V1.0
+C42-P2_05_HIRING.pgsql
+420-C42-IN Langages d'exploitation des bases de données
+Auteurs : Julien Coulombe-Morency, Benjamin Joinvil, Édouard Blain-Noël, François Maltais, Catherine Lavoie, Remi Chuet
+Date de création : 2023-10-18 
+Dernière modification : 2023-10-19
+
 */
 
 DROP PROCEDURE IF EXISTS simulate_hiring(last_name_value employee.last_name%TYPE,first_name_value employee.first_name%TYPE,ssn_value employee.ssn%TYPE);
@@ -285,7 +279,6 @@ AS $$
 $$;
 
 
-
 CREATE OR REPLACE PROCEDURE hire(ssn_value employee.ssn%TYPE,
 								 last_name_value employee.last_name%TYPE,
 								 first_name_value employee.first_name%TYPE,
@@ -369,7 +362,7 @@ BEGIN
 
 END$$;
 
-/*CALL */
+/*CALL DES FONCTION DE SIMULATION */
 
 CALL simulate_hiring('Chuet', 'Rémi', '111111111');
 CALL simulate_hiring('Coulombe-Morency', 'Julien', '222222222');
