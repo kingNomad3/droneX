@@ -1,4 +1,5 @@
 
+DROP TRIGGER IF EXISTS prevent_delete_update;
 DROP TRIGGER IF EXISTS validate_insert_drone_state ON drone_state;	
 DROP FUNCTION IF EXISTS validate_insert_drone_state();
 DROP FUNCTION IF EXISTS get_most_recent_insert_id(drone_param INTEGER);
@@ -320,12 +321,9 @@ EXECUTE FUNCTION validate_insert_drone_state();
 /**********************************************************************/
 
 /*************************** TRIGGER BEFORE UPDATE OR DELETE ***************/
-CREATE TRIGGER validate_insert_drone_state
+CREATE TRIGGER prevent_delete_update
 BEFORE UPDATE OR DELETE
 ON drone_state
 FOR EACH ROW
 RAISE EXCEPTION 'Operation interdite';
 /***************************************************************************/
-
-
-
