@@ -1,3 +1,4 @@
+DROP FUNCTION IF EXISTS requete_dql_3;
 -- =======================================================
 -- Requête #1
 --
@@ -86,9 +87,8 @@ ORDER BY "Model" ASC, "Effective start date" DESC, "Tag" ASC;
 -- Évaluation : 
 -- 
 --
--- Réalisé par : Julien Coulombe-Morency, Rémi Chuet
+-- Réalisé par : Edouard Blain-Noël, Catherine Lavoie
 -- =======================================================
-DROP FUNCTION IF EXISTS requete_dql_3;
 CREATE OR REPLACE FUNCTION requete_dql_3 (drone_id drone.id%TYPE) 
 RETURNS TABLE (name TEXT, status TIMESTAMP, employee_full_name TEXT, activities_amount INT)
 LANGUAGE SQL AS $$
@@ -111,7 +111,8 @@ SELECT DISTINCT state.name AS "Status",
     ON etat.drone_state = sub.id;
 $$;
 
-SELECT * FROM requete_dql_3(75);
+-- Pour tester cette requête
+-- SELECT * FROM requete_dql_3(75);
 
 -- =======================================================
 --
