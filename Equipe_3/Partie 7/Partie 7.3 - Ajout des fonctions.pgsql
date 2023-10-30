@@ -6,9 +6,76 @@ DROP FUNCTION IF EXISTS get_next_rejected_state(symbol_param CHAR(1));
 DROP FUNCTION IF EXISTS get_next_accepted_state(symbol_param CHAR(1));	
 DROP FUNCTION IF EXISTS get_note_from_state(drone_id_param INTEGER);
 DROP FUNCTION IF EXISTS insert_note(drone_state INTEGER, note note_type, date_time TIMESTAMP, employee INTEGER, details VARCHAR(2048));
+DROP PROCEDURE IF EXISTS simulation_transition_multiple_drone_random();
+DROP PROCEDURE IF EXISTS simulation_transition_multiple(drone_id INTEGER, date_commencement TIMESTAMP, date_fin TIMESTAMP);
+DROP PROCEDURE IF EXISTS simulation_transition(drone_id INTEGER, date_insertion TIMESTAMP);
+
+
+
+-- Partie 7 : Une fonction de simulation simulant une transition pour un drone
+CREATE OR REPLACE PROCEDURE simulation_transition(drone_id INTEGER, date_insertion TIMESTAMP) 
+AS $$
+DECLARE
+	old_state CHAR(1) := get_most_recent_insert_state(drone_id);
+	old_state_n_r_state CHAR(1) := get_next_rejected_state(old_state);
+	old_state_n_a_state CHAR(1) := get_next_accepted_state(old_state);
+	probability BOOLEAN := (SELECT random_event(0.75));
+	random_employe INTEGER := random_integer(1, (SELECT COUNT(*) FROM employee)::INTEGER);
+BEGIN
+	IF probability = true THEN
+		INSERT INTO drone_state(drone, state, employee, start_date_time, location) VALUES (drone_id, old_state_n_a_state, random_employe, date_insertion, simulate_storage_localisation_tag());
+	ELSE 
+		INSERT INTO drone_state(drone, state, employee, start_date_time, location) VALUES (drone_id, old_state_n_r_state, random_employe, date_insertion, simulate_storage_localisation_tag());
+	END IF;
+END;
+$$ LANGUAGE PLPGSQL;
+
+-- Partie 7 : Une fonction de simulation simulant n transitions pour un drone
+CREATE OR REPLACE PROCEDURE simulation_transition_multiple(drone_id INTEGER, date_commencement TIMESTAMP, date_fin TIMESTAMP) 
+AS $$
+DECLARE
+	nombre_insertion INTEGER := random_integer(1, 3); -- changer la deuxieme valeur pour modifier le nb de transitions
+	random_timestamp TIMESTAMP;
+	i INTEGER;
+	probability BOOLEAN := (SELECT random_event(0.75));
+BEGIN
+	FOR i IN 1..nombre_insertion LOOP
+		random_timestamp := random_timestamp(date_commencement, date_fin);
+        RAISE NOTICE '%', i;
+		IF probability = true THEN
+			PERFORM simulation_transition(drone_id, random_timestamp);
+		END IF;
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- Partie 7 : Une fonction de simulation simulant n transitions pour un drone généré aléatoirement
+CREATE OR REPLACE PROCEDURE simulation_transition_multiple_drone_random()
+AS $$
+DECLARE
+	random_drone_id INTEGER;
+	nombre_insertion INTEGER := 100; -- changer la deuxieme valeur pour modifier le nb de transitions
+	random_timestamp TIMESTAMP;
+	i INTEGER;
+	probability BOOLEAN := (SELECT random_event(0.75));
+	date_commencement TIMESTAMP;
+BEGIN
+	FOR i IN 1..nombre_insertion LOOP
+		random_drone_id := (SELECT id FROM drone ORDER BY random() LIMIT 1);
+		date_commencement := (SELECT start_date_time FROM drone_state ORDER BY start_date_time DESC LIMIT 1);
+		random_timestamp := (date_commencement + '10 HOUR'::INTERVAL)::TIMESTAMP;
+		probability := (SELECT random_event(0.75));
+
+		IF probability = true THEN
+			CALL simulation_transition(random_drone_id, random_timestamp);
+		END IF;		
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+/*******************************************************************************/
 
 /****************************** Insert dans la table state_note *******************/
-
 CREATE OR REPLACE FUNCTION insert_note(drone_state INTEGER, note note_type, date_time TIMESTAMP, employee INTEGER, details VARCHAR(2048))
 RETURNS VOID
 AS $$
@@ -21,8 +88,6 @@ $$ LANGUAGE PLPGSQL;
 /*******************************************************************************/
 
 /************************************ Récupérer la note du old state *************************/
-
-
 CREATE OR REPLACE FUNCTION get_note_from_state(drone_id_param INTEGER)
 RETURNS note_type
 AS $$
@@ -39,11 +104,11 @@ RETURN note_return;
 
 END;
 $$ LANGUAGE PLPGSQL;
---SELECT get_note_from_state(1);
+/*******************************************************************************/
 
 
-/****************************** Récupérer le prochain next_accepted_state *******************/
-																			   
+
+/****************************** Récupérer le prochain next_accepted_state *******************/																		   
 CREATE OR REPLACE FUNCTION get_next_accepted_state(symbol_param CHAR(1)) 
 RETURNS CHAR(1)
 AS $$
@@ -61,8 +126,7 @@ $$ LANGUAGE PLPGSQL;
 -- SELECT get_next_accepted_state('D')
 /**********************************************************************/
 
-/****************************** Récupérer le prochain next_rejected_state *******************/
-																			   
+/****************************** Récupérer le prochain next_rejected_state *******************/																		   
 CREATE OR REPLACE FUNCTION get_next_rejected_state(symbol_param CHAR(1)) 
 RETURNS CHAR(1)
 AS $$
@@ -82,7 +146,6 @@ $$ LANGUAGE PLPGSQL;
 
 
 /****************************** Récupérer le state de l'insert le plus recent avec drone *******************/
-
 CREATE OR REPLACE FUNCTION get_most_recent_insert_state(drone_param INTEGER) 
 RETURNS CHAR(1)
 AS $$
@@ -101,7 +164,6 @@ $$ LANGUAGE PLPGSQL;
 /************************************************************/
 
 /****************************** Récupérer l'id de l'insert le plus recent avec drone *******************/
-
 CREATE OR REPLACE FUNCTION get_most_recent_insert_id(drone_param INTEGER) 
 RETURNS INTEGER
 AS $$
@@ -126,8 +188,6 @@ $$ LANGUAGE PLPGSQL;
 
 
 /****************************** Fonction du TRIGGER *******************/
-
-
 CREATE OR REPLACE FUNCTION validate_insert_drone_state()
 RETURNS TRIGGER
 LANGUAGE plpgsql AS $$
@@ -251,8 +311,6 @@ END$$;
   
   
 /****************************** TRIGGER BEFORE INSERT  *****************************/
-	
-
 CREATE TRIGGER validate_insert_drone_state
 BEFORE INSERT
 ON drone_state
@@ -260,5 +318,13 @@ FOR EACH ROW
 EXECUTE FUNCTION validate_insert_drone_state();
 /**********************************************************************/
 
+/*************************** TRIGGER BEFORE UPDATE OR DELETE ***************/
+CREATE TRIGGER validate_insert_drone_state
+BEFORE UPDATE OR DELETE
+ON drone_state
+FOR EACH ROW
+EXECUTE FUNCTION validate_insert_drone_state();
+/***************************************************************************/
 
-select * from state_note
+
+

@@ -86,10 +86,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Pour tester la fonction, utiliser le code suivant : 
---CALL simulation_transition_multiple_drone_random();
---SELECT * from drone_state
--- SELECT * from state_note;
 
 	
 	
