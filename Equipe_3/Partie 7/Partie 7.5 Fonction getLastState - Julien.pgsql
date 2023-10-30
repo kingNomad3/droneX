@@ -25,9 +25,12 @@ AS $$
 DECLARE
     last_state state%ROWTYPE := getLastDroneState(p_drone_id);
 BEGIN
-    RAISE NOTICE 'dernier accepted : %       dernier rejected : %', last_state.next_accepted_state, last_state.next_rejected_state;
+    RAISE NOTICE 'last_state : %          dernier accepted : %        dernier rejected : %', last_state.symbol, last_state.next_accepted_state, last_state.next_rejected_state;
 END;
 $$ ;
 
 
 CALL verifLastState(34);
+CALL verifLastState(67);
+CALL verifLastState(49);
+CALL verifLastState(99);
