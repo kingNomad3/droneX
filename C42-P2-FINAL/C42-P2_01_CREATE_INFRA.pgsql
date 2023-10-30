@@ -7,7 +7,6 @@ Date de création : 2023-10-18
 Dernière modification : 2023-10-30
 
 */
-
 DROP VIEW IF EXISTS vue_drone_state_drone; 
 DROP VIEW IF EXISTS vue_drone_state_state_note; 
 DROP VIEW IF EXISTS vue_drone_disponible;
@@ -340,8 +339,6 @@ CREATE VIEW vue_drone_state_state_note AS
 -- 		On pourrait utilser la vue dans le cadre de l'entreprise 
 -- 		afin de pouvoir donner au client rapidement une liste des
 -- 		drones disponibles.
--- 		Elle serait souvent appele, car c'est dans le principe de
--- 		l'entreprise d'offrir les drones disponibles
 
 CREATE VIEW vue_drone_disponible AS
 	SELECT id AS id_drone_dispo
