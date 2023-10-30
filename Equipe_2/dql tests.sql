@@ -67,8 +67,11 @@ SELECT (SELECT name
 
 INSERT INTO state_note VALUES (DEFAULT, 80, 'general_observation', now()::timestamp, 5, 'SEND TO REPARA AND DONT TALKA TOM E AGAIN');
 INSERT INTO drone_state VALUES (DEFAULT, 2, 'R', 2, now()::timestamp, 'XB 000.MAG-600.^IZ00');
-SELECT * FROM drone_state
-SELECT * from state_note WHERE drone_state = 80
+
+SELECT * FROM state_note
+  JOIN (SELECT * FROM drone_state WHERE drone = 75) AS sub
+    ON state_note
+
 
 SELECT DISTINCT state.name AS "Status", 
        sub.start_date_time AS "Start time of status", 
@@ -76,7 +79,7 @@ SELECT DISTINCT state.name AS "Status",
 	   etat.note_amount AS "Number of activities"
   FROM state_note 
   JOIN
-  (SELECT * FROM drone_state WHERE drone = 2) AS "sub"
+  (SELECT * FROM drone_state WHERE drone = 75) AS "sub"
   ON state_note.drone_state = sub.id
   JOIN state
     ON sub.state = state.symbol
@@ -87,8 +90,6 @@ SELECT DISTINCT state.name AS "Status",
 		  FROM state_note 
 		 GROUP BY drone_state) AS "etat"
     ON etat.drone_state = sub.id;
-
-
 
 --SELECT drone, state, COUNT(*) FROM drone_state WHERE drone = 1 GROUP BY drone, state
 
