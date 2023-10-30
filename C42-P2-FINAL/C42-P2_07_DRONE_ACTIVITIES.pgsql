@@ -1,6 +1,7 @@
-DROP TRIGGER IF EXISTS prevent_delete_update ON drone_state;
+DROP TRIGGER IF EXISTS prevent_delete_update_trig ON drone_state;
 DROP TRIGGER IF EXISTS validate_insert_drone_state ON drone_state;	
-DROP FUNCTION IF EXISTS validate_insert_drone_state();
+DROP FUNCTION IF EXISTS prevent_delete_update;
+DROP FUNCTION IF EXISTS validate_insert_drone_state;
 DROP FUNCTION IF EXISTS get_most_recent_insert_id(drone_param INTEGER);
 DROP FUNCTION IF EXISTS get_most_recent_insert_state(drone_param INTEGER);
 DROP FUNCTION IF EXISTS get_next_rejected_state(symbol_param CHAR(1));	
@@ -181,9 +182,15 @@ END
 $$ LANGUAGE PLPGSQL;
 
 /**********************************************************************/
+-- Fonction du TRIGGER prevent update
+CREATE OR REPLACE FUNCTION prevent_delete_update () RETURNS TRIGGER
+LANGUAGE PLPGSQL AS $$
+BEGIN
+RAISE EXCEPTION 'Operation interdite';
+END
+$$;
 
-
-/****************************** Fonction du TRIGGER *******************/
+/****************************** Fonction du TRIGGER VALIDATE *******************/
 CREATE OR REPLACE FUNCTION validate_insert_drone_state()
 RETURNS TRIGGER
 LANGUAGE plpgsql AS $$
@@ -315,9 +322,9 @@ EXECUTE FUNCTION validate_insert_drone_state();
 /**********************************************************************/
 
 /*************************** TRIGGER BEFORE UPDATE OR DELETE ***************/
-CREATE TRIGGER prevent_delete_update
+CREATE TRIGGER prevent_delete_update_trig
 BEFORE UPDATE OR DELETE
 ON drone_state
 FOR EACH ROW
-RAISE EXCEPTION 'Operation interdite';
+EXECUTE FUNCTION prevent_delete_update();
 /***************************************************************************/
