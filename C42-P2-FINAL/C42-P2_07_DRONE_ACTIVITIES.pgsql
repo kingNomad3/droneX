@@ -184,8 +184,8 @@ DECLARE
 	old_state state%ROWTYPE;																			   	
 	old_state_note note_type; 
 	
-	validate_r_a_state BOOLEAN := false;
-	validate_note_old_state BOOLEAN := false;
+	validate_state BOOLEAN := false;
+	validate_state_note BOOLEAN := false;
 	validate_horodatage BOOLEAN := false;
 BEGIN
 	
@@ -202,7 +202,7 @@ BEGIN
 -- 2. fonction qui verifie si le state est bon ou mauvais en fonct du na_state et nr_state
 																				  
 	IF NEW.state = old_state.next_accepted_state OR NEW.state = old_state.next_rejected_state THEN
- 		validate_r_a_state := true;
+ 		validate_state := true;
 	END IF;
 	
 -- 3. partie qui verifie si la note associe a l'ancien state est la bonne
@@ -211,12 +211,12 @@ BEGIN
 		IF old_state_note = 'problematic_observation'::note_type 
 		OR old_state_note = 'maintenance_performed'::note_type 
 		OR old_state_note = 'repair_completed'::note_type THEN
-			validate_note_old_state = true;	
+			validate_state_note = true;	
 		END IF;
 	ELSIF NEW.state = old_state.next_accepted_state THEN
-		validate_note_old_state = true;
+		validate_state_note = true;
 	ELSIF NEW.state = old_state.next_rejected_state AND old_state_note = 'problematic_observation'::note_type THEN
-		validate_note_old_state = true;
+		validate_state_note = true;
 	END IF;
 	
 -- 4.  partie qui verifie si le temps en insertion est plus petit que le temps actuel
@@ -227,10 +227,10 @@ BEGIN
 	
 -- 5. partie de la fonction qui vérifie si toute les conditions d'insertion sont remplies puis insert le message concéquent
 
-  	IF validate_r_a_state = true AND validate_note_old_state = true AND validate_horodatage = true THEN
+  	IF validate_state AND validate_state_note AND validate_horodatage THEN
     	RETURN NEW;
   	ELSE
-    	RAISE EXCEPTION 'Insert validation failed: validate_r_a_state %  validate_note_old_state %  validate_horodatage %', validate_r_a_state, validate_note_old_state, validate_horodatage;
+    	RAISE EXCEPTION 'Insert validation failed: validate_state %  validate_state_note %  validate_horodatage %', validate_r_a_state, validate_note_old_state, validate_horodatage;
   	END IF;
 END$$; 
 
