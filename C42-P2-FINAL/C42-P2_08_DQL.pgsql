@@ -117,9 +117,9 @@ SELECT name AS "Name",
        status AS "Status", 
 	   employee_full_name AS "Employee", 
 	   activities_amount AS "Amount of activities" 
-  FROM requete_dql_3(56);
+  FROM requete_dql_3(23);
   
-  SELECT * FROM state_note WHERE drone_state IN (SELECT * FROM drone_state WHERE drone = 56)
+  SELECT * FROM drone_state
 
 -- =======================================================
 --

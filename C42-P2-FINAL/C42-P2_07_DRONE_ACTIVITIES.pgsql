@@ -12,6 +12,7 @@ DROP TRIGGER IF EXISTS prevent_delete_update_trig ON drone_state;
 DROP TRIGGER IF EXISTS insert_into_state_note_trig ON drone_state;
 DROP TRIGGER IF EXISTS validate_insert_drone_state_trig ON drone_state;	
 DROP FUNCTION IF EXISTS insert_into_state_note;
+DROP FUNCTION IF EXISTS get_previous_state(drone_param INTEGER);
 DROP FUNCTION IF EXISTS validate_insert_drone_state;
 DROP FUNCTION IF EXISTS prevent_delete_update;
 DROP FUNCTION IF EXISTS get_most_recent_insert_id(drone_param INTEGER);
@@ -226,11 +227,16 @@ BEGIN
 	
 -- 2. fonction qui verifie si le state est bon ou mauvais en fonct du na_state et nr_state
 																
-	old_state := get_most_recent_insert_state(New.drone);
+	old_state := get_most_recent_insert_state(NEW.drone);
 	old_state_next_accepted_state := get_next_accepted_state(old_state);
 	old_state_next_rejected_state := get_next_rejected_state(old_state);
 	
+	RAISE NOTICE 'before insert : New.drone - > %', NEW.drone;
+	RAISE NOTICE 'before insert : old_state -> %', old_state;
+	
 	old_state_note := get_note_from_state(New.drone); 
+	
+	RAISE NOTICE 'before insert : old_state_note -> %', old_state_note;
 																				  
 	IF NEW.state = old_state_next_accepted_state OR NEW.state = old_state_next_rejected_state THEN
  		validate_r_a_state := true;
@@ -268,6 +274,25 @@ BEGIN
   	END IF;
 END$$; 
 
+
+-- Fonction get previous state pour le trigger after
+CREATE OR REPLACE FUNCTION get_previous_state(drone_param INTEGER) 
+    RETURNS CHAR(1)
+LANGUAGE PLPGSQL
+AS $$
+DECLARE 
+    old_state CHAR(1);
+BEGIN
+    old_state := (
+        SELECT state
+        FROM drone_state
+        WHERE drone = drone_param
+        ORDER BY start_date_time DESC
+        LIMIT 1 OFFSET 1
+    );
+    RETURN old_state;
+END$$;
+
 -- Trigger after insert in drone_state that inserts state_notes:
 
 CREATE OR REPLACE FUNCTION insert_into_state_note() 
@@ -279,9 +304,12 @@ DECLARE
 	old_state_next_accepted_state CHAR(1);
 	old_state_next_rejected_state CHAR(1);
 BEGIN
-	old_state := get_most_recent_insert_state(New.drone);
+	old_state := get_previous_state(NEW.drone);
 	old_state_next_accepted_state := get_next_accepted_state(old_state);
 	old_state_next_rejected_state := get_next_rejected_state(old_state);
+	
+	RAISE NOTICE 'after insert : New.drone - > %', NEW.drone;
+	RAISE NOTICE 'after insert : old_state -> %', old_state;
 
 	IF NEW.state = old_state_next_accepted_state AND old_state = 'R' THEN
 		PERFORM insert_note(NEW.id, 'maintenance_performed', NEW.start_date_time, NEW.employee, concat('Maintenance done by : ', 
@@ -324,9 +352,10 @@ EXECUTE FUNCTION prevent_delete_update();
 
 /*CALL DES FONCTION DE SIMULATION */
 
--- CALL simulation_transition_multiple_drone_random(100)	-- Changer le chiffre pour générer plus de transition
+-- CALL simulation_transition_multiple_drone_random(50)	-- Changer le chiffre pour générer plus de transition
 
 -- SELECT * FROM state_note
 -- SELECT * FROM drone
+-- SELECT * FROM drone_state
 
 
