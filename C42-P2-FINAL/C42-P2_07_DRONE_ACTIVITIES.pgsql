@@ -15,10 +15,7 @@ DROP FUNCTION IF EXISTS insert_into_state_note;
 DROP FUNCTION IF EXISTS get_previous_state(drone_param INTEGER);
 DROP FUNCTION IF EXISTS validate_insert_drone_state;
 DROP FUNCTION IF EXISTS prevent_delete_update;
-DROP FUNCTION IF EXISTS get_most_recent_insert_id(drone_param INTEGER);
-DROP FUNCTION IF EXISTS get_most_recent_insert_state(drone_param INTEGER);
-DROP FUNCTION IF EXISTS get_next_rejected_state(symbol_param CHAR(1));	
-DROP FUNCTION IF EXISTS get_next_accepted_state(symbol_param CHAR(1));	
+DROP FUNCTION IF EXISTS get_last_state(p_drone_id INTEGER, is_before BOOLEAN);
 DROP FUNCTION IF EXISTS get_note_from_state(drone_id_param INTEGER);
 DROP FUNCTION IF EXISTS insert_note(drone_state INTEGER, note note_type, date_time TIMESTAMP, employee INTEGER, details VARCHAR(2048));
 DROP PROCEDURE IF EXISTS simulation_transition_multiple_drone_random(nombre_insertion INTEGER);
@@ -32,18 +29,19 @@ CREATE OR REPLACE PROCEDURE simulation_transition(drone_id INTEGER,
 LANGUAGE PLPGSQL
 AS $$
 DECLARE
-	old_state CHAR(1) := get_most_recent_insert_state(drone_id);
-	old_state_n_r_state CHAR(1) := get_next_rejected_state(old_state);
-	old_state_n_a_state CHAR(1) := get_next_accepted_state(old_state);
+	old_state state%ROWTYPE;
+	
 	probability BOOLEAN := (SELECT random_event(0.75));
 	random_employe INTEGER := random_integer(1, (SELECT COUNT(*) FROM employee)::INTEGER);
 BEGIN
+	old_state := get_last_state(drone_id, TRUE);	
+	
 	IF probability = true THEN
 		INSERT INTO drone_state(drone, state, employee, start_date_time, location) 
-			VALUES (drone_id, old_state_n_a_state, random_employe, date_insertion, simulate_storage_localisation_tag());
+			VALUES (drone_id, old_state.next_accepted_state, random_employe, date_insertion, simulate_storage_localisation_tag());
 	ELSE 
 		INSERT INTO drone_state(drone, state, employee, start_date_time, location) 
-			VALUES (drone_id, old_state_n_r_state, random_employe, date_insertion, simulate_storage_localisation_tag());
+			VALUES (drone_id, old_state.next_rejected_state, random_employe, date_insertion, simulate_storage_localisation_tag());
 	END IF;
 END$$;
 
@@ -125,73 +123,44 @@ DECLARE
 BEGIN
 	note_return := (SELECT note 
 					  FROM state_note 
-					 WHERE drone_state = drone_id_param 
-				  ORDER BY date_time DESC LIMIT 1);
+					 WHERE drone_state = (SELECT id FROM drone_state 
+					                       WHERE drone = drone_id_param 
+										ORDER BY start_date_time DESC LIMIT 1));
 	RETURN note_return;
 END$$; 
 
 
---Récupérer le prochain next_accepted_state																	   
-CREATE OR REPLACE FUNCTION get_next_accepted_state(symbol_param CHAR(1)) 
-	RETURNS CHAR(1)
-LANGUAGE PLPGSQL
+-- Fonction qui allègerais le code de la fonction trigger. Permet de retourner la row au complet du dernier state
+
+CREATE OR REPLACE FUNCTION get_last_state(p_drone_id INTEGER, is_before BOOLEAN) 
+RETURNS state 
+LANGUAGE plpgsql
 AS $$
-DECLARE 
-	n_a_state CHAR(1);
+DECLARE
+    last_state state;
 BEGIN
-	n_a_state := (SELECT next_accepted_state
-			  	    FROM state
-			       WHERE symbol = symbol_param);		  
-	RETURN n_a_state;
-END$$;
 
+    IF is_before THEN
+        SELECT * INTO last_state
+        FROM state
+        WHERE symbol = (SELECT state FROM drone_state WHERE drone = p_drone_id
+                                ORDER BY start_date_time DESC
+                                    LIMIT 1); 
+        
+        RETURN last_state;
+    ELSE
+        SELECT * INTO last_state
+        FROM state
+        WHERE symbol = (SELECT state FROM drone_state WHERE drone = p_drone_id
+                                ORDER BY start_date_time DESC
+                                    LIMIT 1 OFFSET 1);
+        RETURN last_state; 
+    END IF;
 
---Récupérer le prochain next_rejected_state																	   
-CREATE OR REPLACE FUNCTION get_next_rejected_state(symbol_param CHAR(1)) 
-	RETURNS CHAR(1)
-LANGUAGE PLPGSQL
-AS $$
-DECLARE 
-	n_r_state CHAR(1);
-BEGIN
-	n_r_state := (SELECT next_rejected_state
-			  	    FROM state
-			       WHERE symbol = symbol_param);		  
-	RETURN n_r_state;
-END$$; 
+    RAISE EXCEPTION 'Pas trouvé de state pour drone_id : %  et is_before : %', p_drone_id, is_before;
+    
+END$$ ;
 
-
---Récupérer le state de l'insert le plus recent avec drone
-CREATE OR REPLACE FUNCTION get_most_recent_insert_state(drone_param INTEGER) 
-	RETURNS CHAR(1)
-LANGUAGE PLPGSQL
-AS $$
-DECLARE 
-	old_state CHAR(1);
-BEGIN
-	old_state := (SELECT state
-			  	    FROM drone_state
-			       WHERE drone = drone_param
-			    ORDER BY start_date_time DESC LIMIT 1);		  
-	RETURN old_state;
-END$$;
-
-
---Récupérer l'id de l'insert le plus recent avec drone
-CREATE OR REPLACE FUNCTION get_most_recent_insert_id(drone_param INTEGER) 
-	RETURNS INTEGER
-LANGUAGE PLPGSQL
-AS $$
-DECLARE 
-	old_id INTEGER;
-BEGIN
-	old_id := (SELECT id
-			  	  FROM drone_state
-			      WHERE drone = drone_param
-				  ORDER BY start_date_time DESC
-				  LIMIT 1);		  
-	RETURN old_id;
-END$$;
 
 -- Fonction du TRIGGER prevent update
 CREATE OR REPLACE FUNCTION prevent_delete_update () 
@@ -207,17 +176,17 @@ CREATE OR REPLACE FUNCTION validate_insert_drone_state()
 LANGUAGE plpgsql 
 AS $$
 DECLARE
-	old_state CHAR(1);																			   
-	old_state_next_accepted_state CHAR(1);
-	old_state_next_rejected_state CHAR(1);
-	
-	old_state_note note_type;
-	--old_state_number_insertion INTEGER := (SELECT COUNT(*) FROM drone_state WHERE drone_state.drone = NEW.drone);
+	old_state state%ROWTYPE;																			   	
+	old_state_note note_type; 
 	
 	validate_r_a_state BOOLEAN := false;
 	validate_note_old_state BOOLEAN := false;
 	validate_horodatage BOOLEAN := false;
 BEGIN
+	
+	old_state  := get_last_state(NEW.drone, TRUE);	
+	old_state_note := get_note_from_state(New.drone); 
+	
 -- 1. Si le dernier state était final alors la prochaine tentative aura une valeur NULL, 
 -- donc si la tentative est NULL on retourne NULL directement et ignore l'insertion
 
@@ -226,35 +195,28 @@ BEGIN
 	END IF;
 	
 -- 2. fonction qui verifie si le state est bon ou mauvais en fonct du na_state et nr_state
-																
-	old_state := get_most_recent_insert_state(NEW.drone);
-	old_state_next_accepted_state := get_next_accepted_state(old_state);
-	old_state_next_rejected_state := get_next_rejected_state(old_state);
-	
+
 	RAISE NOTICE 'before insert : New.drone - > %', NEW.drone;
-	RAISE NOTICE 'before insert : old_state -> %', old_state;
-	
-	old_state_note := get_note_from_state(New.drone); 
-	
+	RAISE NOTICE 'before insert : old_state -> %', old_state.symbol;
 	RAISE NOTICE 'before insert : old_state_note -> %', old_state_note;
 																				  
-	IF NEW.state = old_state_next_accepted_state OR NEW.state = old_state_next_rejected_state THEN
+	IF NEW.state = old_state.next_accepted_state OR NEW.state = old_state.next_rejected_state THEN
  		validate_r_a_state := true;
 	ELSE 
-		RAISE NOTICE 'MAUVAISE INSERTION LE STATE DOIT EGAL a % ou a %', old_state_next_accepted_state, old_state_next_rejected_state;
+		RAISE NOTICE 'MAUVAISE INSERTION LE STATE DOIT EGAL a % ou a %', old_state.next_accepted_state, old_state.next_rejected_state;
 	END IF;
 	
 -- 3. partie qui verifie si la note associe a l'ancien state est la bonne
  	
-	IF New.state = old_state_next_accepted_state AND old_state = 'R' THEN -- i.e si NEW.state = i
+	IF New.state = old_state.next_accepted_state AND old_state.symbol = 'R' THEN -- i.e si NEW.state = i
 		IF old_state_note = 'problematic_observation'::note_type 
 		OR old_state_note = 'maintenance_performed'::note_type 
 		OR old_state_note = 'repair_completed'::note_type THEN
 			validate_note_old_state = true;	
 		END IF;
-	ELSIF New.state = old_state_next_accepted_state OR NEW.state = old_state_next_rejected_state THEN
+	ELSIF New.state = old_state.next_accepted_state OR NEW.state = old_state.next_rejected_state THEN
 		validate_note_old_state = true;
-	ELSIF New.state = old_state_next_rejected_state AND old_state_note = 'problematic_observation'::note_type THEN
+	ELSIF New.state = old_state.next_rejected_state AND old_state_note = 'problematic_observation'::note_type THEN
 		validate_note_old_state = true;
 	END IF;
 	
@@ -275,24 +237,6 @@ BEGIN
 END$$; 
 
 
--- Fonction get previous state pour le trigger after
-CREATE OR REPLACE FUNCTION get_previous_state(drone_param INTEGER) 
-    RETURNS CHAR(1)
-LANGUAGE PLPGSQL
-AS $$
-DECLARE 
-    old_state CHAR(1);
-BEGIN
-    old_state := (
-        SELECT state
-        FROM drone_state
-        WHERE drone = drone_param
-        ORDER BY start_date_time DESC
-        LIMIT 1 OFFSET 1
-    );
-    RETURN old_state;
-END$$;
-
 -- Trigger after insert in drone_state that inserts state_notes:
 
 CREATE OR REPLACE FUNCTION insert_into_state_note() 
@@ -300,22 +244,17 @@ CREATE OR REPLACE FUNCTION insert_into_state_note()
 LANGUAGE PLPGSQL 
 AS $$
 DECLARE
-	old_state CHAR(1);																			   
-	old_state_next_accepted_state CHAR(1);
-	old_state_next_rejected_state CHAR(1);
+	old_state state%ROWTYPE;																		   
 BEGIN
-	old_state := get_previous_state(NEW.drone);
-	old_state_next_accepted_state := get_next_accepted_state(old_state);
-	old_state_next_rejected_state := get_next_rejected_state(old_state);
-	
+	old_state  := get_last_state(NEW.drone, FALSE);	
 	RAISE NOTICE 'after insert : New.drone - > %', NEW.drone;
-	RAISE NOTICE 'after insert : old_state -> %', old_state;
+	RAISE NOTICE 'after insert : old_state -> %', old_state.symbol;
 
-	IF NEW.state = old_state_next_accepted_state AND old_state = 'R' THEN
+	IF NEW.state = old_state.next_accepted_state AND old_state.symbol = 'R' THEN
 		PERFORM insert_note(NEW.id, 'maintenance_performed', NEW.start_date_time, NEW.employee, concat('Maintenance done by : ', 
 							(SELECT first_name FROM employee WHERE id = New.employee), ' ',(SELECT last_name FROM employee WHERE id = New.employee), ' on ',  NEW.start_date_time::DATE));
 		RAISE NOTICE 'CA MARCHE MAINTENANCE';
-	ELSIF NEW.state = old_state_next_rejected_state THEN
+	ELSIF NEW.state = old_state.next_rejected_state THEN
 		PERFORM insert_note(NEW.id, 'problematic_observation', NEW.start_date_time, NEW.employee, concat('Problematic observation made by : ', 
 							(SELECT first_name FROM employee WHERE id = NEW.employee), ' ',(SELECT last_name FROM employee WHERE id = NEW.employee), ' on ',  NEW.start_date_time::DATE));
 		RAISE NOTICE 'CA MARCHE PROB';
@@ -354,8 +293,17 @@ EXECUTE FUNCTION prevent_delete_update();
 
 -- CALL simulation_transition_multiple_drone_random(50)	-- Changer le chiffre pour générer plus de transition
 
--- SELECT * FROM state_note
+-- SELECT * FROM state_note WHERE drone_state = 130
 -- SELECT * FROM drone
--- SELECT * FROM drone_state
+-- SELECT * FROM drone_state WHERE drone = 28
+
+
+
+
+
+
+
+
+
 
 
