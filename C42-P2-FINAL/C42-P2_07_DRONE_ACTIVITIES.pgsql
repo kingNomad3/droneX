@@ -113,24 +113,27 @@ BEGIN
 END$$;
 
 
---Récupérer la note du old state
+--Récupérer la note du dernier state
+
 CREATE OR REPLACE FUNCTION get_note_from_state(drone_id_param INTEGER)
 RETURNS state_note.note%TYPE
 LANGUAGE PLPGSQL
 AS $$
 DECLARE
-	note_return state_note.note%TYPE;
+	last_state_note state_note.note%TYPE;
 BEGIN
-	note_return := (SELECT note 
+	last_state_note := (SELECT note 
 					  FROM state_note 
 					 WHERE drone_state = (SELECT id FROM drone_state 
 					                       WHERE drone = drone_id_param 
 										ORDER BY start_date_time DESC LIMIT 1));
-	RETURN note_return;
+	RETURN last_state_note;
 END$$; 
 
 
--- Fonction qui allègerais le code de la fonction trigger. Permet de retourner la row au complet du dernier state
+-- Fonction qui permet de retourner la Row au complet du dernier state
+-- On passe TRUE pour son utilisation dans un trigger BEFORE
+-- FALSE pour son utilisation dans un trigger AFTER
 
 CREATE OR REPLACE FUNCTION get_last_state(p_drone_id INTEGER, is_before BOOLEAN) 
 RETURNS state 
@@ -163,6 +166,7 @@ END$$ ;
 
 
 -- Fonction du TRIGGER prevent update
+
 CREATE OR REPLACE FUNCTION prevent_delete_update () 
 RETURNS TRIGGER
 LANGUAGE PLPGSQL AS $$
@@ -171,6 +175,7 @@ BEGIN
 END$$;
 
 --Fonction du TRIGGER VALIDATE
+
 CREATE OR REPLACE FUNCTION validate_insert_drone_state()
 	RETURNS TRIGGER
 LANGUAGE plpgsql 
@@ -185,7 +190,7 @@ DECLARE
 BEGIN
 	
 	old_state  := get_last_state(NEW.drone, TRUE);	
-	old_state_note := get_note_from_state(New.drone); 
+	old_state_note := get_note_from_state(NEW.drone); 
 	
 -- 1. Si le dernier state était final alors la prochaine tentative aura une valeur NULL, 
 -- donc si la tentative est NULL on retourne NULL directement et ignore l'insertion
@@ -195,28 +200,22 @@ BEGIN
 	END IF;
 	
 -- 2. fonction qui verifie si le state est bon ou mauvais en fonct du na_state et nr_state
-
-	RAISE NOTICE 'before insert : New.drone - > %', NEW.drone;
-	RAISE NOTICE 'before insert : old_state -> %', old_state.symbol;
-	RAISE NOTICE 'before insert : old_state_note -> %', old_state_note;
 																				  
 	IF NEW.state = old_state.next_accepted_state OR NEW.state = old_state.next_rejected_state THEN
  		validate_r_a_state := true;
-	ELSE 
-		RAISE NOTICE 'MAUVAISE INSERTION LE STATE DOIT EGAL a % ou a %', old_state.next_accepted_state, old_state.next_rejected_state;
 	END IF;
 	
 -- 3. partie qui verifie si la note associe a l'ancien state est la bonne
  	
-	IF New.state = old_state.next_accepted_state AND old_state.symbol = 'R' THEN -- i.e si NEW.state = i
+	IF NEW.state = old_state.next_accepted_state AND old_state.symbol = 'R' THEN -- i.e si NEW.state = i
 		IF old_state_note = 'problematic_observation'::note_type 
 		OR old_state_note = 'maintenance_performed'::note_type 
 		OR old_state_note = 'repair_completed'::note_type THEN
 			validate_note_old_state = true;	
 		END IF;
-	ELSIF New.state = old_state.next_accepted_state OR NEW.state = old_state.next_rejected_state THEN
+	ELSIF NEW.state = old_state.next_accepted_state THEN
 		validate_note_old_state = true;
-	ELSIF New.state = old_state.next_rejected_state AND old_state_note = 'problematic_observation'::note_type THEN
+	ELSIF NEW.state = old_state.next_rejected_state AND old_state_note = 'problematic_observation'::note_type THEN
 		validate_note_old_state = true;
 	END IF;
 	
@@ -229,7 +228,6 @@ BEGIN
 -- 5. partie de la fonction qui vérifie si toute les conditions d'insertion sont remplies puis insert le message concéquent
 
   	IF validate_r_a_state = true AND validate_note_old_state = true AND validate_horodatage = true THEN
-		RAISE NOTICE 'BONNE INSERTION';
     	RETURN NEW;
   	ELSE
     	RAISE EXCEPTION 'Insert validation failed: validate_r_a_state %  validate_note_old_state %  validate_horodatage %', validate_r_a_state, validate_note_old_state, validate_horodatage;
@@ -247,21 +245,16 @@ DECLARE
 	old_state state%ROWTYPE;																		   
 BEGIN
 	old_state  := get_last_state(NEW.drone, FALSE);	
-	RAISE NOTICE 'after insert : New.drone - > %', NEW.drone;
-	RAISE NOTICE 'after insert : old_state -> %', old_state.symbol;
 
 	IF NEW.state = old_state.next_accepted_state AND old_state.symbol = 'R' THEN
 		PERFORM insert_note(NEW.id, 'maintenance_performed', NEW.start_date_time, NEW.employee, concat('Maintenance done by : ', 
 							(SELECT first_name FROM employee WHERE id = New.employee), ' ',(SELECT last_name FROM employee WHERE id = New.employee), ' on ',  NEW.start_date_time::DATE));
-		RAISE NOTICE 'CA MARCHE MAINTENANCE';
 	ELSIF NEW.state = old_state.next_rejected_state THEN
 		PERFORM insert_note(NEW.id, 'problematic_observation', NEW.start_date_time, NEW.employee, concat('Problematic observation made by : ', 
 							(SELECT first_name FROM employee WHERE id = NEW.employee), ' ',(SELECT last_name FROM employee WHERE id = NEW.employee), ' on ',  NEW.start_date_time::DATE));
-		RAISE NOTICE 'CA MARCHE PROB';
 	ELSE
 		PERFORM insert_note(NEW.id, 'general_observation', NEW.start_date_time, NEW.employee, concat('State transition approved by : ', 
 							(SELECT first_name FROM employee WHERE id = NEW.employee), ' ',(SELECT last_name FROM employee WHERE id = NEW.employee), ' on ',  NEW.start_date_time::DATE));
-		RAISE NOTICE 'CA MARCHE GENERA';
 	END IF;
 
 	RETURN NULL;
