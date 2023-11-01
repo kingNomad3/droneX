@@ -340,7 +340,11 @@ CREATE VIEW vue_drone_state_state_note AS
 -- 		afin de pouvoir donner au client rapidement une liste des
 -- 		drones disponibles.
 
+
 CREATE VIEW vue_drone_disponible AS
-	SELECT DISTINCT id AS id_drone_dispo
+	SELECT DISTINCT drone AS id_drone_dispo,
+		   start_date_time AS "available from :"	
 	  FROM drone_state
 	 WHERE state = 'D'
+	 ORDER BY "available from :" DESC
+	 
