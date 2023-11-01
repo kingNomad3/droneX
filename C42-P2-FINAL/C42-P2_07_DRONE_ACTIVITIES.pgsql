@@ -213,7 +213,7 @@ BEGIN
 		OR old_state_note = 'repair_completed'::note_type THEN
 			validate_state_note = true;	
 		END IF;
-	ELSIF NEW.state = old_state.next_accepted_state THEN
+	ELSIF NEW.state = old_state.next_accepted_state  OR NEW.state = old_state.next_rejected_state THEN
 		validate_state_note = true;
 	ELSIF NEW.state = old_state.next_rejected_state AND old_state_note = 'problematic_observation'::note_type THEN
 		validate_state_note = true;
@@ -230,7 +230,7 @@ BEGIN
   	IF validate_state AND validate_state_note AND validate_horodatage THEN
     	RETURN NEW;
   	ELSE
-    	RAISE EXCEPTION 'Insert validation failed: validate_state %  validate_state_note %  validate_horodatage %', validate_r_a_state, validate_note_old_state, validate_horodatage;
+    	RAISE EXCEPTION 'Insert validation failed: validate_state %  validate_state_note %  validate_horodatage %', validate_state, validate_state_note, validate_horodatage;
   	END IF;
 END$$; 
 
@@ -284,11 +284,8 @@ EXECUTE FUNCTION prevent_delete_update();
 
 /*CALL DES FONCTION DE SIMULATION */
 
--- CALL simulation_transition_multiple_drone_random(50)	-- Changer le chiffre pour générer plus de transition
+CALL simulation_transition_multiple_drone_random(300)	-- Changer le chiffre pour générer plus de transition
 
--- SELECT * FROM state_note WHERE drone_state = 130
--- SELECT * FROM drone
--- SELECT * FROM drone_state WHERE drone = 28
 
 
 
