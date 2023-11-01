@@ -341,8 +341,6 @@ CREATE VIEW vue_drone_state_state_note AS
 -- 		drones disponibles.
 
 CREATE VIEW vue_drone_disponible AS
-	SELECT id AS id_drone_dispo
+	SELECT DISTINCT id AS id_drone_dispo
 	  FROM drone_state
 	 WHERE state = 'D'
-     ORDER BY start_date_time DESC
-     LIMIT 1; 	

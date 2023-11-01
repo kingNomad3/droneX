@@ -23,12 +23,16 @@ SELECT drone_model.name AS "Model",
 	   drone_state.start_date_time AS "Effective start date"
   FROM drone  
   JOIN drone_state
-    ON drone.id = drone_state.drone
+    ON drone.id = drone_state.drone AND drone_state.start_date_time = (SELECT start_date_time 
+																	     FROM drone_state
+																	    WHERE drone = drone.id 
+																	 ORDER BY start_date_time DESC LIMIT 1)
   JOIN drone_model
     ON drone.model = drone_model.id
   JOIN state
     ON drone_state.state = state.symbol
-ORDER BY "Model" ASC, "Effective start date" DESC, "Tag" ASC;
+ORDER BY "Model" ASC, "Effective start date" DESC, "Tag" ASC
+
 
 -- =======================================================
 
@@ -51,30 +55,66 @@ ORDER BY "Model" ASC, "Effective start date" DESC, "Tag" ASC;
 -- Réalisé par : Julien Coulombe-Morency, Rémi Chuet
 -- =======================================================
 
-   SELECT (SELECT STRING_AGG(name, ',' ORDER BY name)  
+
+
+SELECT ( SELECT STRING_AGG(name, ',' ORDER BY name)  
 		  FROM operational_domain, drone_domain 
 		  WHERE id = drone_domain.domain AND drone_domain.model = drone.model) AS domain_operationnel,
 			
 		  (SELECT name 
 		  FROM drone_model 
-		  WHERE id = drone.model) AS model,
+		  WHERE id = drone.model) AS model123,
 			
 		  drone_tag AS drone_tag, 
 
 		  (SELECT start_date_time 
 		  FROM drone_state 
-	      WHERE drone = drone.id AND state = 'D') AS date_disponibilite,
-			
+	      WHERE drone = drone.id AND state = 'D' AND start_date_time = (SELECT start_date_time 
+																	     FROM drone_state
+																	    WHERE drone = drone.id 
+																	 ORDER BY start_date_time DESC LIMIT 1)) AS date_disponibilite,			
 		  (SELECT location 
 		  FROM drone_state 
-		  WHERE drone = drone.id AND state = 'D') AS localisation,
+		  WHERE drone = drone.id AND state = 'D'  AND start_date_time = (SELECT start_date_time 
+																	     FROM drone_state
+																	    WHERE drone = drone.id 
+																	 ORDER BY start_date_time DESC LIMIT 1)) AS localisation,
 			
 		  (SELECT count(*) 
 		  FROM state_note, drone_state 
-		  WHERE drone_state = drone_state.id AND drone_state.drone = drone.id ) AS nb_inspection
+		  WHERE drone_state = drone_state.id AND drone_state.drone = drone.id AND drone_state.state = 'I') AS nb_inspection
 
 	 FROM drone
- ORDER BY domain_operationnel ASC, model ASC, date_disponibilite ASC;
+	 WHERE (SELECT location 
+          FROM drone_state 
+          WHERE drone = drone.id AND state = 'D'  AND start_date_time = (SELECT start_date_time 
+																	     FROM drone_state
+																	    WHERE drone = drone.id 
+																	 ORDER BY start_date_time DESC LIMIT 1)) IS NOT NULL
+ ORDER BY domain_operationnel ASC, model123 ASC, date_disponibilite ASC;
+
+-- manque le nombre d'inspection, manque le operation domain
+
+
+
+-- SELECT drone.model, drone.drone_tag, temp.max, drone_state.location FROM drone 
+--   JOIN (SELECT drone, max(start_date_time) FROM drone_state GROUP BY drone ORDER BY drone) as "temp"
+--     ON drone.id = temp.drone
+--   JOIN drone_state
+--     ON drone_state.start_date_time = temp.max 
+-- WHERE drone_state.state = 'D'
+-- ORDER BY drone.id
+
+--  SELECT name
+-- 		  FROM operational_domain, drone_domain 
+-- 		  WHERE id = drone_domain.domain AND drone_domain.model = drone.model
+		  
+-- SELECT *
+--   FROM drone_domain 
+--   JOIN drone
+--     ON drone_domain.model = drone.model
+--   JOIN operational_domain
+--     ON drone_domain.domain = operational_domain.id
 
 -- =======================================================
 
